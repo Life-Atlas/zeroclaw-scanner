@@ -1,0 +1,36 @@
+{
+  "scan_metadata": {
+    "timestamp": "2026-05-25T14:30:00Z",
+    "scanner_version": "1.0.0",
+    "repository_name": "boardy-agents",
+    "target_branch": "main"
+  },
+  "vulnerabilities": [
+    {
+      "id": "VULN-001",
+      "tool_source": "gitleaks",
+      "severity": "CRITICAL",
+      "title": "Hardcoded AWS Secret Key",
+      "location": {
+        "file_path": "src/config/keys.py",
+        "line_number": 42
+      },
+      "description": "An AWS Access Key was detected in plain text.",
+      "remediation": "Move secrets to environment variables (.env) or Secret Manager.",
+      "cwe_id": "CWE-798"
+    },
+    {
+      "id": "VULN-002",
+      "tool_source": "custom-sql-scanner",
+      "severity": "HIGH",
+      "title": "SQL Injection Vulnerability",
+      "location": {
+        "file_path": "src/database/query.py",
+        "line_number": 128
+      },
+      "description": "User input is being concatenated directly into a SQL query string.",
+      "remediation": "Use parameterized queries (prepared statements) instead of f-strings.",
+      "cwe_id": "CWE-89"
+    }
+  ]
+}
