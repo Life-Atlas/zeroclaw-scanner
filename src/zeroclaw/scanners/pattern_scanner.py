@@ -59,6 +59,8 @@ def scan_patterns(target_dir: Path) -> list[Finding]:
         if file_path.suffix not in EXTENSIONS:
             continue
         try:
+            if file_path.stat().st_size > 5 * 1024 * 1024:  # skip files larger than 5MB
+                continue
             lines = file_path.read_text(encoding="utf-8", errors="ignore").splitlines()
         except Exception:
             continue
