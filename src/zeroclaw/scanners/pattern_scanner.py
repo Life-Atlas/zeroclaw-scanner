@@ -53,7 +53,7 @@ def _is_safe(line: str) -> bool:
 
 def scan_patterns(target_dir: Path) -> list[Finding]:
     """Scan for dangerous code patterns."""
-    findings = []
+    findings: list[Finding] = []
 
     for file_path in target_dir.rglob("*"):
         if file_path.suffix not in EXTENSIONS:
