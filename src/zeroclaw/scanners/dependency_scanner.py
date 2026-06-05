@@ -45,13 +45,7 @@ def _parse_requirements_txt(path: Path) -> list[tuple[str, str, int]]:
 
 def _parse_pyproject_toml(path: Path) -> list[tuple[str, str, int]]:
     """Return (name, version, line_number) tuples from pyproject.toml."""
-    try:
-        import tomllib
-    except ImportError:
-        try:
-            import tomli as tomllib  # type: ignore[no-redef]
-        except ImportError:
-            return []
+    import tomllib
 
     content = path.read_text(encoding="utf-8")
     data = tomllib.loads(content)
@@ -82,7 +76,7 @@ def _parse_pyproject_toml(path: Path) -> list[tuple[str, str, int]]:
 
 
 def _query_osv(name: str, version: str) -> list[dict]:
-    """POST to OSV API; returns vuln list or [] on any failure."""
+    """POST to OSV API and return vuln list."""
     payload = json.dumps(
         {"version": version, "package": {"name": name, "ecosystem": "PyPI"}}
     ).encode()
@@ -92,11 +86,8 @@ def _query_osv(name: str, version: str) -> list[dict]:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return json.loads(resp.read()).get("vulns", [])
-    except Exception:
-        return []
+    with urllib.request.urlopen(req, timeout=5) as resp:
+        return json.loads(resp.read()).get("vulns", [])
 
 
 def _extract_severity(vuln: dict) -> Severity:
@@ -188,25 +179,16 @@ def scan_python_deps(target_dir: Path) -> list[Finding]:
 
 def scan_node_deps(target_dir: Path) -> list[Finding]:
     """Run npm audit on package.json."""
-    try:
-        result = subprocess.run(
-            ["npm", "audit", "--json"],
-            cwd=target_dir,
-            capture_output=True,
-            text=True,
-            check=False,  # non-zero exit is normal when vulnerabilities are found
-            timeout=30,
-        )
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        return []
+    result = subprocess.run(
+        ["npm", "audit", "--json"],
+        cwd=target_dir,
+        capture_output=True,
+        text=True,
+        check=False,  # non-zero exit is normal when vulnerabilities are found
+        timeout=30,
+    )
 
-    if not result.stdout.strip():
-        return []
-
-    try:
-        data = json.loads(result.stdout)
-    except json.JSONDecodeError:
-        return []
+    data = json.loads(result.stdout)
 
     # Bail out if npm reported a structural error (e.g. ENOLOCK — no lockfile)
     if "error" in data:
