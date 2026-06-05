@@ -30,49 +30,109 @@ _SEVERITY_MAP: dict[str, Severity] = {
 }
 
 
-def _parse_requirements_txt(path: Path) -> list[tuple[str, str, int]]:
-    """Return (name, version, line_number) tuples from requirements.txt."""
-    packages = []
+def _parse_requirements_txt(
+    path: Path,
+) -> tuple[list[tuple[str, str, int]], list[tuple[str, int]]]:
+    """Return (pinned, unpinned) where pinned=(name, version, line) and unpinned=(spec, line)."""
+    pinned: list[tuple[str, str, int]] = []
+    unpinned: list[tuple[str, int]] = []
     for lineno, line in enumerate(path.read_text().splitlines(), start=1):
-        line = line.strip()
-        if not line or line.startswith("#"):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or stripped.startswith("-"):
             continue
-        if "==" in line:
-            name, version = line.split("==", 1)
-            packages.append((name.strip(), version.strip(), lineno))
-    return packages
+        if "==" in stripped:
+            name, version = stripped.split("==", 1)
+            # Strip inline comments and hash markers
+            version = version.split()[0].split("#")[0].strip()
+            pinned.append((name.strip(), version, lineno))
+        else:
+            pkg_name = re.split(r"[><=!~^@]", stripped)[0].strip()
+            if pkg_name:
+                unpinned.append((stripped, lineno))
+    return pinned, unpinned
 
 
-def _parse_pyproject_toml(path: Path) -> list[tuple[str, str, int]]:
-    """Return (name, version, line_number) tuples from pyproject.toml."""
+def _parse_pyproject_toml(
+    path: Path,
+) -> tuple[list[tuple[str, str, int]], list[tuple[str, int]]]:
+    """Return (pinned, unpinned) dependency tuples from pyproject.toml."""
     import tomllib
 
     content = path.read_text(encoding="utf-8")
     data = tomllib.loads(content)
     lines = content.splitlines()
 
-    deps = data.get("project", {}).get("dependencies", [])
-    if not deps:
+    raw_deps: list[str] = data.get("project", {}).get("dependencies", [])
+    if not raw_deps:
         poetry_deps = data.get("tool", {}).get("poetry", {}).get("dependencies", {})
-        deps = [
-            f"{name}=={str(ver).lstrip('^~>=<!')}"
+        raw_deps = [
+            f"{name}{ver}" if re.search(r"[><=!~^]", str(ver)) else f"{name}=={ver}"
             for name, ver in poetry_deps.items()
             if name != "python"
         ]
 
-    packages = []
-    for dep in deps:
-        if "==" not in dep:
-            continue
-        name, version = dep.split("==", 1)
-        name, version = name.strip(), version.strip()
+    pinned: list[tuple[str, str, int]] = []
+    unpinned: list[tuple[str, int]] = []
+    for dep in raw_deps:
+        pkg_name = re.split(r"[><=!~^@\[]", dep)[0].strip()
         line_number = next(
-            (i for i, ln in enumerate(lines, start=1) if name in ln),
+            (i for i, ln in enumerate(lines, start=1) if pkg_name in ln),
             None,
         )
-        if line_number is not None:
-            packages.append((name, version, line_number))
-    return packages
+        if line_number is None:
+            continue
+        if "==" in dep:
+            _, version = dep.split("==", 1)
+            pinned.append((pkg_name, version.strip(), line_number))
+        else:
+            unpinned.append((dep, line_number))
+    return pinned, unpinned
+
+
+def _check_hash_pinning(manifest: Path) -> Finding | None:
+    """Return a finding when requirements.txt lacks hash-verification entries."""
+    content = manifest.read_text()
+    if "--hash=" not in content:
+        return Finding(
+            id="ZEROCLAW-DEP-001",
+            severity=Severity.MEDIUM,
+            category=Category.DEPENDENCY,
+            title="Dependencies not hash-verified (supply chain risk)",
+            description=(
+                "requirements.txt pins versions with '==' but does not include "
+                "--hash=sha256:... markers. Without hash verification, a compromised "
+                "mirror or DNS hijack can substitute a malicious package that passes "
+                "the version check."
+            ),
+            file_path=str(manifest),
+            line_number=None,
+            remediation=(
+                "Generate a hash-pinned lockfile: pip-compile --generate-hashes "
+                "or add hashes manually via 'pip download --require-hashes'."
+            ),
+        )
+    return None
+
+
+def _make_unpinned_finding(spec: str, lineno: int, manifest: Path) -> Finding:
+    pkg_name = re.split(r"[><=!~^@\[]", spec)[0].strip() or spec
+    return Finding(
+        id="ZEROCLAW-DEP-002",
+        severity=Severity.MEDIUM,
+        category=Category.DEPENDENCY,
+        title=f"Unpinned dependency: {pkg_name}",
+        description=(
+            f"'{spec}' uses a floating version specifier. Floating versions allow "
+            "automatic updates that may pull in vulnerable or malicious releases "
+            "without explicit review."
+        ),
+        file_path=str(manifest),
+        line_number=lineno,
+        remediation=(
+            f"Pin {pkg_name} to an exact version using '==' and add a hash marker, "
+            "e.g. via pip-compile --generate-hashes."
+        ),
+    )
 
 
 def _query_osv(name: str, version: str) -> list[dict]:
@@ -101,6 +161,18 @@ def _extract_severity(vuln: dict) -> Severity:
     return Severity.MEDIUM
 
 
+def _extract_cve_ids(vuln: dict) -> list[str]:
+    """Collect CVE IDs from the vuln id and its aliases."""
+    cves: list[str] = []
+    vuln_id = vuln.get("id", "")
+    if vuln_id.startswith("CVE-"):
+        cves.append(vuln_id)
+    for alias in vuln.get("aliases", []):
+        if alias.startswith("CVE-"):
+            cves.append(alias)
+    return cves
+
+
 def _extract_npm_vuln_id(via: dict) -> str:
     """Extract a CVE or GHSA ID from an npm audit via entry."""
     url = via.get("url", "")
@@ -116,23 +188,31 @@ def _extract_npm_vuln_id(via: dict) -> str:
 
 
 def scan_python_deps(target_dir: Path) -> list[Finding]:
-    """Run pip-audit on requirements.txt / pyproject.toml."""
-    all_packages: list[tuple[str, str, int, Path]] = []
+    """Scan requirements.txt / pyproject.toml for vulnerable and unpinned deps."""
+    all_pinned: list[tuple[str, str, int, Path]] = []
+    findings: list[Finding] = []
 
     req_file = target_dir / "requirements.txt"
     if req_file.exists():
-        for name, version, lineno in _parse_requirements_txt(req_file):
-            all_packages.append((name, version, lineno, req_file))
+        pinned, unpinned = _parse_requirements_txt(req_file)
+        for name, version, lineno in pinned:
+            all_pinned.append((name, version, lineno, req_file))
+        for spec, lineno in unpinned:
+            findings.append(_make_unpinned_finding(spec, lineno, req_file))
+        hash_finding = _check_hash_pinning(req_file)
+        if hash_finding:
+            findings.append(hash_finding)
 
     toml_file = target_dir / "pyproject.toml"
     if toml_file.exists():
-        for name, version, lineno in _parse_pyproject_toml(toml_file):
-            all_packages.append((name, version, lineno, toml_file))
+        pinned, unpinned = _parse_pyproject_toml(toml_file)
+        for name, version, lineno in pinned:
+            all_pinned.append((name, version, lineno, toml_file))
+        for spec, lineno in unpinned:
+            findings.append(_make_unpinned_finding(spec, lineno, toml_file))
 
-    findings: list[Finding] = []
     seen_ids: set[str] = set()
-
-    for name, version, lineno, manifest in all_packages:
+    for name, version, lineno, manifest in all_pinned:
         key = f"{name}=={version}"
 
         # Offline fallback tried first (guarantees tests pass without network)
@@ -153,14 +233,23 @@ def scan_python_deps(target_dir: Path) -> list[Finding]:
                 ))
             continue
 
-        for vuln in _query_osv(name, version):
+        try:
+            osv_vulns = _query_osv(name, version)
+        except Exception:
+            osv_vulns = []
+
+        for vuln in osv_vulns:
             vuln_id = vuln.get("id", "UNKNOWN")
             if vuln_id in seen_ids:
                 continue
             seen_ids.add(vuln_id)
 
+            cve_ids = _extract_cve_ids(vuln)
             details = vuln.get("details") or vuln.get("summary", "")
-            if vuln_id not in details:
+            if cve_ids:
+                cve_ref = ", ".join(cve_ids)
+                details = f"{cve_ref}: {details}" if cve_ref not in details else details
+            elif vuln_id not in details:
                 details = f"{vuln_id}: {details}"
 
             findings.append(Finding(
@@ -178,17 +267,21 @@ def scan_python_deps(target_dir: Path) -> list[Finding]:
 
 
 def scan_node_deps(target_dir: Path) -> list[Finding]:
-    """Run npm audit on package.json."""
+    """Run npm audit on package.json — lifecycle scripts are never executed."""
     result = subprocess.run(
-        ["npm", "audit", "--json"],
-        cwd=target_dir,
+        # --ignore-scripts prevents any package lifecycle hook from running during audit
+        ["npm", "audit", "--json", "--ignore-scripts"],
+        cwd=str(target_dir),
         capture_output=True,
         text=True,
         check=False,  # non-zero exit is normal when vulnerabilities are found
         timeout=30,
     )
 
-    data = json.loads(result.stdout)
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return []
 
     # Bail out if npm reported a structural error (e.g. ENOLOCK — no lockfile)
     if "error" in data:
