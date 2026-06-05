@@ -98,7 +98,11 @@ def scan_secrets(target_dir: Path) -> list[Finding]:
         try:
             if path.stat().st_size > 5 * 1024 * 1024:
                 continue
-        except Exception:
+        except (FileNotFoundError, PermissionError, OSError) as e:
+            print(f"WARNING: Could not get size for {path}: {e}")
+            continue
+        except Exception as e:
+            print(f"ERROR: Unexpected error getting size for {path}: {e}")
             continue
 
         # Read files line-by-line using buffered streaming to prevent OOM
@@ -133,7 +137,11 @@ def scan_secrets(target_dir: Path) -> list[Finding]:
                                 remediation="Remove the hardcoded secret and replace it with environment variable injection or a secret vault lookup."
                             ))
                             break
-        except Exception:
+        except (FileNotFoundError, PermissionError, OSError) as e:
+            print(f"WARNING: Could not read file {path}: {e}")
+            continue
+        except Exception as e:
+            print(f"ERROR: Unexpected error reading file {path}: {e}")
             continue
 
     return findings
