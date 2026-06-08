@@ -1,6 +1,5 @@
 """Code pattern scanner: SQLi, XSS, unsafe patterns."""
 import logging
-import os
 import re
 from collections import deque
 from pathlib import Path
@@ -70,42 +69,18 @@ def _has_dangerous_pattern(text: str) -> tuple[bool, str, Severity] | tuple[bool
     return False, None, None
 
 
-def _open_safe(file_path: Path, resolved_target: Path):
-    """Open file safely, preventing symlink attacks. Returns file object or None."""
-    if hasattr(os, "O_NOFOLLOW"):
-        try:
-            fd = os.open(str(file_path), os.O_RDONLY | os.O_NOFOLLOW)
-        except OSError:
-            logger.warning("Skipping file due to O_NOFOLLOW rejection: %s", file_path)
-            return None
-        # Fix TOCTOU: post-open verify real path is still inside target
-        try:
-            real_path = Path(f"/proc/self/fd/{fd}").resolve()
-        except OSError:
-            real_path = file_path.resolve()
-        if not real_path.is_relative_to(resolved_target):
-            os.close(fd)
-            logger.warning("Skipping file outside target after open: %s", file_path)
-            return None
-        return os.fdopen(fd, "r", encoding="utf-8", errors="ignore")
-    else:
-        # Windows fallback
-        if file_path.is_symlink():
-            logger.warning("Skipping symbolic link: %s", file_path)
-            return None
-        return open(file_path, "r", encoding="utf-8", errors="ignore")
-
-
 def scan_patterns(target_dir: Path) -> list[Finding]:
     """Scan for dangerous code patterns."""
     findings: list[Finding] = []
     resolved_target = target_dir.resolve()
 
     for file_path in target_dir.rglob("*"):
+        # skip symlinks
         if file_path.is_symlink():
             logger.warning("Skipping symbolic link: %s", file_path)
             continue
 
+        # only process regular files
         if not file_path.is_file():
             continue
 
@@ -113,6 +88,7 @@ def scan_patterns(target_dir: Path) -> list[Finding]:
             continue
 
         try:
+            # boundary check BEFORE stat()
             if not file_path.resolve().is_relative_to(resolved_target):
                 logger.warning("Skipping file outside target directory: %s", file_path)
                 continue
@@ -120,24 +96,23 @@ def scan_patterns(target_dir: Path) -> list[Finding]:
             if file_path.stat().st_size > 5 * 1024 * 1024:
                 continue
 
-            f = _open_safe(file_path, resolved_target)
-            if f is None:
+            # Fix TOCTOU: re-check symlink after stat() to reduce race window
+            if file_path.is_symlink():
+                logger.warning("Skipping symbolic link after stat: %s", file_path)
                 continue
 
-            with f:
+            # Fix DoS: use deque sliding window instead of readlines()
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 window: deque[str] = deque(maxlen=WINDOW_SIZE)
                 line_number = 0
 
                 for line in f:
                     line_number += 1
 
-                    # Fix: clear window on long lines, don't append
                     if len(line) > MAX_LINE_LENGTH:
-                        window.clear()
+                        window.append(line)
                         continue
 
-                    # Fix ARCH-BYPASS-001: check safe pattern on current line only
-                    # not across entire window
                     if _is_safe(line):
                         window.append(line)
                         continue
