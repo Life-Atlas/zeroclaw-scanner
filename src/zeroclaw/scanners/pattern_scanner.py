@@ -60,13 +60,27 @@ def _is_safe(line: str) -> bool:
 def scan_patterns(target_dir: Path) -> list[Finding]:
     """Scan for dangerous code patterns."""
     findings: list[Finding] = []
+    resolved_target = target_dir.resolve()
 
     for file_path in target_dir.rglob("*"):
+        # Fix 1: skip symbolic links to prevent reading files outside workspace
+        if file_path.is_symlink():
+            logger.warning("Skipping symbolic link: %s", file_path)
+            continue
+
         if file_path.suffix not in EXTENSIONS:
             continue
-        if file_path.stat().st_size > 5 * 1024 * 1024:  # skip files larger than 5MB
-            continue
+
         try:
+            # Fix 2: stat() moved inside try-except to handle crashes gracefully
+            if file_path.stat().st_size > 5 * 1024 * 1024:  # skip files larger than 5MB
+                continue
+
+            # Extra safety: verify file is inside target directory
+            if not file_path.resolve().is_relative_to(resolved_target):
+                logger.warning("Skipping file outside target directory: %s", file_path)
+                continue
+
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 for line_number, line in enumerate(f, start=1):
                     if _is_safe(line):
