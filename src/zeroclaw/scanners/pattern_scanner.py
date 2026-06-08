@@ -1,6 +1,7 @@
 """Code pattern scanner: SQLi, XSS, unsafe patterns."""
 import logging
 import re
+from collections import deque
 from pathlib import Path
 
 from zeroclaw.models import Category, Finding, Severity
@@ -52,6 +53,7 @@ EXTENSIONS = {
 }
 
 MAX_LINE_LENGTH = 2048
+WINDOW_SIZE = 3
 
 
 def _is_safe(line: str) -> bool:
@@ -59,10 +61,10 @@ def _is_safe(line: str) -> bool:
     return any(re.search(p, line) for p in SAFE_PATTERNS)
 
 
-def _has_dangerous_pattern(line: str) -> tuple[bool, str, Severity] | tuple[bool, None, None]:
-    """Check line against dangerous patterns only."""
+def _has_dangerous_pattern(text: str) -> tuple[bool, str, Severity] | tuple[bool, None, None]:
+    """Check text against dangerous patterns."""
     for pattern, message, severity in DANGEROUS_PATTERNS:
-        if re.search(pattern, line):
+        if re.search(pattern, text):
             return True, message, severity
     return False, None, None
 
@@ -94,41 +96,47 @@ def scan_patterns(target_dir: Path) -> list[Finding]:
             if file_path.stat().st_size > 5 * 1024 * 1024:
                 continue
 
+            # Fix TOCTOU: re-check symlink after stat() to reduce race window
+            if file_path.is_symlink():
+                logger.warning("Skipping symbolic link after stat: %s", file_path)
+                continue
+
+            # Fix DoS: use deque sliding window instead of readlines()
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                lines = f.readlines()
+                window: deque[str] = deque(maxlen=WINDOW_SIZE)
+                line_number = 0
 
-            # Fix: scan sliding window of 3 lines to catch multi-line patterns
-            for line_number, line in enumerate(lines, start=1):
-                # skip extremely long lines
-                if len(line) > MAX_LINE_LENGTH:
-                    continue
+                for line in f:
+                    line_number += 1
 
-                # Fix: check safe patterns FIRST, then dangerous
-                if _is_safe(line):
-                    continue
+                    if len(line) > MAX_LINE_LENGTH:
+                        window.append(line)
+                        continue
 
-                # build a small multi-line context window
-                window = "".join(lines[line_number - 1:line_number + 2])
-                if len(window) > MAX_LINE_LENGTH * 3:
-                    window = window[:MAX_LINE_LENGTH * 3]
+                    if _is_safe(line):
+                        window.append(line)
+                        continue
 
-                found, message, severity = _has_dangerous_pattern(window)
-                if not found:
-                    continue
+                    window.append(line)
+                    context = "".join(window)
 
-                if found and message and severity:
-                    findings.append(
-                        Finding(
-                            id=f"PATTERN-{len(findings)+1:04d}",
-                            severity=severity,
-                            category=Category.CODE_PATTERN,
-                            title=message,
-                            description=f"{message} at line {line_number}: {line.strip()}",
-                            file_path=str(file_path),
-                            line_number=line_number,
-                            remediation="Use parameterized queries or safe DOM APIs.",
+                    found, message, severity = _has_dangerous_pattern(context)
+                    if not found:
+                        continue
+
+                    if found and message and severity:
+                        findings.append(
+                            Finding(
+                                id=f"PATTERN-{len(findings)+1:04d}",
+                                severity=severity,
+                                category=Category.CODE_PATTERN,
+                                title=message,
+                                description=f"{message} at line {line_number}: {line.strip()}",
+                                file_path=str(file_path),
+                                line_number=line_number,
+                                remediation="Use parameterized queries or safe DOM APIs.",
+                            )
                         )
-                    )
 
         except (OSError, UnicodeDecodeError) as e:
             logger.warning("Could not read file %s: %s", file_path, e)
