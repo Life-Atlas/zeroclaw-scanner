@@ -81,3 +81,18 @@ class TestSecretScanner:
         assert len(findings) == 1
         assert "Anthropic API key" in findings[0].title
 
+    def test_unreadable_file_logged(self, tmp_path, capsys):
+        """Should log a warning message when a file cannot be read."""
+        from unittest.mock import patch
+        unreadable_file = tmp_path / "unreadable.py"
+        unreadable_file.write_text("API_KEY = 'sk-ant-12345678901234567890'")
+        
+        with patch("builtins.open", side_effect=PermissionError("Mocked permission error")):
+            findings = scan_secrets(tmp_path)
+            assert len(findings) == 0
+            
+        captured = capsys.readouterr()
+        assert "WARNING: Could not read file" in captured.out
+        assert "Mocked permission error" in captured.out
+
+
