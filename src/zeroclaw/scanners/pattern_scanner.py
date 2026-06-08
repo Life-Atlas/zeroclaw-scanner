@@ -1,5 +1,6 @@
 """Code pattern scanner: SQLi, XSS, unsafe patterns."""
 import logging
+import os
 import re
 from collections import deque
 from pathlib import Path
@@ -96,13 +97,22 @@ def scan_patterns(target_dir: Path) -> list[Finding]:
             if file_path.stat().st_size > 5 * 1024 * 1024:
                 continue
 
-            # Fix TOCTOU: re-check symlink after stat() to reduce race window
-            if file_path.is_symlink():
-                logger.warning("Skipping symbolic link after stat: %s", file_path)
-                continue
+            # Fix TOCTOU: use O_NOFOLLOW on Linux, fallback double-check on Windows
+            if hasattr(os, "O_NOFOLLOW"):
+                try:
+                    fd = os.open(str(file_path), os.O_RDONLY | os.O_NOFOLLOW)
+                except OSError:
+                    logger.warning("Skipping file due to O_NOFOLLOW rejection: %s", file_path)
+                    continue
+                f_context = os.fdopen(fd, "r", encoding="utf-8", errors="ignore")
+            else:
+                if file_path.is_symlink():
+                    logger.warning("Skipping symbolic link after stat: %s", file_path)
+                    continue
+                f_context = open(file_path, "r", encoding="utf-8", errors="ignore")
 
             # Fix DoS: use deque sliding window instead of readlines()
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            with f_context as f:
                 window: deque[str] = deque(maxlen=WINDOW_SIZE)
                 line_number = 0
 
@@ -110,7 +120,7 @@ def scan_patterns(target_dir: Path) -> list[Finding]:
                     line_number += 1
 
                     if len(line) > MAX_LINE_LENGTH:
-                        window.append(line)
+                        window.clear()
                         continue
 
                     if _is_safe(line):
