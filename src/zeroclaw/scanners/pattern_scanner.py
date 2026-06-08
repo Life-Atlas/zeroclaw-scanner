@@ -14,7 +14,7 @@ DANGEROUS_PATTERNS = [
         Severity.HIGH,
     ),
     (
-        r"\.execute\s*\(\s*['\"][^'\n]*\+",
+        r"\.execute\s*\(\s*['\"][^'\"]*\+",
         "Possible SQL injection (string concat in execute)",
         Severity.HIGH,
     ),
@@ -34,7 +34,7 @@ DANGEROUS_PATTERNS = [
         Severity.MEDIUM,
     ),
     (
-        r"subprocess\.(call|run|Popen)\s*\([^'\n]*shell\s*=\s*True",
+        r"subprocess\.(call|run|Popen)\s*\(.*shell\s*=\s*True",
         "Command injection: shell=True",
         Severity.HIGH,
     ),
@@ -51,7 +51,7 @@ EXTENSIONS = {
     ".html", ".htm", ".vue", ".svelte",
 }
 
-MAX_LINE_LENGTH = 2048  # Fix: ReDoS protection
+MAX_LINE_LENGTH = 2048
 
 
 def _is_safe(line: str) -> bool:
@@ -73,12 +73,12 @@ def scan_patterns(target_dir: Path) -> list[Finding]:
     resolved_target = target_dir.resolve()
 
     for file_path in target_dir.rglob("*"):
-        # Fix 1: skip symlinks
+        # skip symlinks
         if file_path.is_symlink():
             logger.warning("Skipping symbolic link: %s", file_path)
             continue
 
-        # Fix 2: only process regular files (blocks named pipes/FIFOs)
+        # only process regular files
         if not file_path.is_file():
             continue
 
@@ -86,40 +86,49 @@ def scan_patterns(target_dir: Path) -> list[Finding]:
             continue
 
         try:
-            # Fix 3: boundary check BEFORE stat() call
+            # boundary check BEFORE stat()
             if not file_path.resolve().is_relative_to(resolved_target):
                 logger.warning("Skipping file outside target directory: %s", file_path)
                 continue
 
-            if file_path.stat().st_size > 5 * 1024 * 1024:  # skip files larger than 5MB
+            if file_path.stat().st_size > 5 * 1024 * 1024:
                 continue
 
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                for line_number, line in enumerate(f, start=1):
-                    # Fix 4: skip extremely long lines to prevent ReDoS
-                    if len(line) > MAX_LINE_LENGTH:
-                        continue
+                lines = f.readlines()
 
-                    # Fix 5: only skip line if safe pattern matches BUT no dangerous pattern exists
-                    found, message, severity = _has_dangerous_pattern(line)
-                    if not found:
-                        continue
-                    if _is_safe(line) and not found:
-                        continue
+            # Fix: scan sliding window of 3 lines to catch multi-line patterns
+            for line_number, line in enumerate(lines, start=1):
+                # skip extremely long lines
+                if len(line) > MAX_LINE_LENGTH:
+                    continue
 
-                    if found and message and severity:
-                        findings.append(
-                            Finding(
-                                id=f"PATTERN-{len(findings)+1:04d}",
-                                severity=severity,
-                                category=Category.CODE_PATTERN,
-                                title=message,
-                                description=f"{message} at line {line_number}: {line.strip()}",
-                                file_path=str(file_path),
-                                line_number=line_number,
-                                remediation="Use parameterized queries or safe DOM APIs.",
-                            )
+                # Fix: check safe patterns FIRST, then dangerous
+                if _is_safe(line):
+                    continue
+
+                # build a small multi-line context window
+                window = "".join(lines[line_number - 1:line_number + 2])
+                if len(window) > MAX_LINE_LENGTH * 3:
+                    window = window[:MAX_LINE_LENGTH * 3]
+
+                found, message, severity = _has_dangerous_pattern(window)
+                if not found:
+                    continue
+
+                if found and message and severity:
+                    findings.append(
+                        Finding(
+                            id=f"PATTERN-{len(findings)+1:04d}",
+                            severity=severity,
+                            category=Category.CODE_PATTERN,
+                            title=message,
+                            description=f"{message} at line {line_number}: {line.strip()}",
+                            file_path=str(file_path),
+                            line_number=line_number,
+                            remediation="Use parameterized queries or safe DOM APIs.",
                         )
+                    )
 
         except (OSError, UnicodeDecodeError) as e:
             logger.warning("Could not read file %s: %s", file_path, e)
