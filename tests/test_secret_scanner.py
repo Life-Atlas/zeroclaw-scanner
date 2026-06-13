@@ -43,3 +43,41 @@ class TestSecretScanner:
         findings = scan_secrets(vulnerable_repo)
         for f in findings:
             assert f.file_path, f"Finding {f.id} missing file_path"
+
+    def test_path_traversal_prevention(self):
+        """Should raise ValueError for paths outside safe directories (traversal attempt)."""
+        import os
+        import pytest
+        from pathlib import Path
+        outside_path = Path("C:/Windows/System32") if os.name == "nt" else Path("/etc")
+        with pytest.raises(ValueError, match="Path traversal detected"):
+            scan_secrets(outside_path)
+
+    def test_large_file_skipped(self, tmp_path):
+        """Should skip scanning files that are larger than 5MB."""
+        large_file = tmp_path / "large.txt"
+        large_file.write_text("A" * (5 * 1024 * 1024 + 1024))
+        findings = scan_secrets(tmp_path)
+        assert len(findings) == 0
+
+    def test_comment_bypass_mitigated(self, tmp_path):
+        """Should detect secrets even if they have inline comments mimicking env lookups."""
+        config_file = tmp_path / "config.py"
+        config_file.write_text(
+            'API_KEY = "sk-ant-api03-reallyLongFakeKeyThatShouldBeDetected1234567890" # fallback to getenv\n'
+            'PASSWORD = "super_secret_password_123" // os.environ.get\n'
+            'DB_PASSWORD = "super_secret_password_456" -- process.env\n'
+        )
+        findings = scan_secrets(tmp_path)
+        assert len(findings) == 3
+
+    def test_default_fallback_token_detected(self, tmp_path):
+        """Should detect high-confidence tokens even when used as default/fallback values in env lookups."""
+        config_file = tmp_path / "config.py"
+        config_file.write_text(
+            'API_KEY = os.getenv("API_KEY", "sk-ant-api03-reallyLongFakeKeyThatShouldBeDetected1234567890")\n'
+        )
+        findings = scan_secrets(tmp_path)
+        assert len(findings) == 1
+        assert "Anthropic API key" in findings[0].title
+
