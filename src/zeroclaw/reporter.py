@@ -121,8 +121,72 @@ def generate_terminal_report(result: ScanResult) -> str:
 
 
 def generate_json_report(result: ScanResult) -> dict:
-    """JSON report for dashboard consumption, including enrichment data."""
-    return result.model_dump(mode="json")
+    """JSON report formatted precisely to the LifeAtlasEcosystemSecurityFindingSchema."""
+    
+    findings_array = []
+    for f in result.findings:
+        # Default stride based on category
+        stride = "Tampering"
+        if f.category.value == "auth":
+            stride = "Elevation of Privilege"
+        elif f.category.value == "secret":
+            stride = "Information Disclosure"
+        elif f.category.value == "dependency":
+            stride = "Tampering"
+        elif f.category.value == "injection":
+            stride = "Tampering"
+            
+        steps = f.remediation
+        if f.fixed_code:
+            steps += f"\n\nFixed Code:\n```\n{f.fixed_code}\n```"
+            
+        findings_array.append({
+            "id": f.id,
+            "reasoning_chain": f.reasoning_chain or "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
+            "severity": f.severity.value.upper(),
+            "stride_classification": stride,
+            "owasp_alignment": "LA-01",
+            "affected_component": f.file_path,
+            "description": f.description,
+            "remediation": {
+                "steps": steps
+            }
+        })
+        
+    stream_id = 1
+    try:
+        import re
+        if result.stream:
+            match = re.search(r'\d+', result.stream)
+            if match:
+                stream_id = int(match.group(0))
+    except Exception:
+        pass
+        
+    # Extract base name from repo_url or target path
+    import os
+    repo_name = os.path.basename(os.path.normpath(result.repo_url)) or "unknown-repo"
+
+    return {
+        "scan_metadata": {
+            "timestamp": result.scanned_at.isoformat(),
+            "scanner_tool": "custom-regex",
+            "execution_environment": "local-dev-env"
+        },
+        "target_scope": {
+            "stream_id": stream_id,
+            "repository_name": repo_name,
+            "commit_sha": "0000000000000000000000000000000000000000"
+        },
+        "summary": {
+            "total_findings": len(result.findings),
+            "critical_count": result.stats.get("critical", 0),
+            "high_count": result.stats.get("high", 0),
+            "medium_count": result.stats.get("medium", 0),
+            "low_count": result.stats.get("low", 0)
+        },
+        "findings": findings_array
+    }
 
 
 def calculate_stream_score(result: ScanResult) -> StreamScore:

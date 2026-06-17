@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -115,12 +116,32 @@ def _run_scan(args: argparse.Namespace) -> None:
             from .agent_client import ZeroClawClient
 
             client = ZeroClawClient()
+
+            # Warn early if the binary wasn't found
+            if not client.is_available:
+                print(
+                    "  ⚠  ZeroClaw binary not found! Enrichment will use fallback messages.\n"
+                    "     Install: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash\n"
+                    "     Then ensure ~/.cargo/bin is in your PATH.\n"
+                )
+
+            _fallback_keywords = (
+                "not found", "not installed", "timed out",
+                "unavailable", "non-zero exit", "Error",
+            )
+
             for i, finding in enumerate(enrichable, 1):
                 print(f"  [{i}/{len(enrichable)}] Enriching {finding.id} ...", end=" ", flush=True)
                 target_file = target / finding.file_path
                 client.enrich_finding(finding, target_file)
-                status = "✓ enriched" if finding.reasoning_chain and "unavailable" not in (finding.reasoning_chain or "") else "⚠ fallback"
-                print(status)
+                rc = finding.reasoning_chain or ""
+                is_real = bool(rc) and not any(kw in rc for kw in _fallback_keywords)
+                print("✓ enriched" if is_real else "⚠ fallback")
+
+                # Rate limiting prevention: sleep 60 seconds after every 10 enrichments
+                if i % 10 == 0 and i < len(enrichable):
+                    print(f"  [Rate Limit] Sleeping for 60 seconds to prevent API blocks...")
+                    time.sleep(60)
 
         enriched_findings = raw_findings  # enrichable items are mutated in-place
 

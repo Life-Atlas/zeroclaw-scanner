@@ -46,6 +46,8 @@ def scan_secrets(target_dir: Path) -> list[Finding]:
     """Scan directory for hardcoded secrets. Returns list of findings."""
     # Resolve target_dir and rely on per-file boundary checks inside the loop
     target_abs = target_dir.resolve()
+    # Validate the target directory against workspace bounds
+    validate_path(target_abs, Path.cwd())
 
     findings: list[Finding] = []
 
