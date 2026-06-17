@@ -305,9 +305,11 @@ def scan_python_deps(target_dir: Path) -> list[Finding]:
 
 def scan_node_deps(target_dir: Path) -> list[Finding]:
     """Run npm audit on package.json — lifecycle scripts are never executed."""
+    import sys
+    npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
     result = subprocess.run(
         # --ignore-scripts prevents any package lifecycle hook from running during audit
-        ["npm", "audit", "--json", "--ignore-scripts"],
+        [npm_cmd, "audit", "--json", "--ignore-scripts"],
         cwd=str(target_dir),
         capture_output=True,
         text=True,
