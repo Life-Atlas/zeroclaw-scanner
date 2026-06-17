@@ -1,7 +1,8 @@
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Severity(str, Enum):
@@ -32,6 +33,13 @@ class Finding(BaseModel):
     remediation: str
     stream: str = ""
     false_positive: bool = False
+    # --- ZeroClaw Agent Enrichment Fields ---
+    reasoning_chain: Optional[str] = Field(
+        default=None, description="ZeroClaw Agent's step-by-step vulnerability analysis"
+    )
+    fixed_code: Optional[str] = Field(
+        default=None, description="Agent-generated remediated code snippet"
+    )
 
 
 class ScanResult(BaseModel):
