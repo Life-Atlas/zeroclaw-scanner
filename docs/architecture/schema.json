@@ -1,0 +1,202 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LifeAtlasEcosystemSecurityFindingSchema",
+  "description": "Standardized JSON data contract for automated security scanners across the 6-stream cohort.",
+  "type": "object",
+  "required": [
+    "scan_metadata",
+    "target_scope",
+    "summary",
+    "findings"
+  ],
+  "properties": {
+    "scan_metadata": {
+      "type": "object",
+      "required": [
+        "timestamp",
+        "scanner_tool",
+        "execution_environment"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The exact date and time the security scan was initiated (ISO-8601 format)."
+        },
+        "scanner_tool": {
+          "type": "string",
+          "enum": [
+            "pip-audit",
+            "npm-audit",
+            "cargo-audit",
+            "bandit",
+            "gitleaks",
+            "semgrep",
+            "custom-regex",
+            "detect-secrets"
+          ],
+          "description": "The specific static analysis or dependency utility that generated this report."
+        },
+        "execution_environment": {
+          "type": "string",
+          "enum": [
+            "github-actions-ci",
+            "local-dev-env",
+            "pre-commit-hook"
+          ],
+          "description": "The platform context where the scanning binary was executed."
+        }
+      }
+    },
+    "target_scope": {
+      "type": "object",
+      "required": [
+        "stream_id",
+        "repository_name",
+        "commit_sha"
+      ],
+      "properties": {
+        "stream_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6,
+          "description": "The numeric identifier of the cohort stream being audited (1-6)."
+        },
+        "repository_name": {
+          "type": "string",
+          "description": "The exact name of the target repository as configured on GitHub."
+        },
+        "commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$",
+          "description": "The full 40-character SHA-1 hash of the specific Git commit scanned."
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "total_findings",
+        "critical_count",
+        "high_count",
+        "medium_count",
+        "low_count"
+      ],
+      "properties": {
+        "total_findings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "critical_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "high_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "medium_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "low_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "reasoning_chain",
+          "severity",
+          "stride_classification",
+          "owasp_alignment",
+          "affected_component",
+          "description",
+          "remediation"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The industry standard CVE/GHSA designation, or custom internal tracking vulnerability index."
+          },
+          "reasoning_chain": {
+            "type": "string",
+            "description": "A mandatory step-by-step logical explanation of why this code violates a specific OWASP rule or STRIDE category. Must justify the severity rating. If the chain cannot logically prove the vulnerability, the finding must be dropped."
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "CRITICAL",
+              "HIGH",
+              "MEDIUM",
+              "LOW",
+              "INFO"
+            ],
+            "description": "The calculated severity barrier of the vulnerability based on CVSS or internal risk assessment."
+          },
+          "stride_classification": {
+            "type": "string",
+            "enum": [
+              "Spoofing",
+              "Tampering",
+              "Repudiation",
+              "Information Disclosure",
+              "Denial of Service",
+              "Elevation of Privilege"
+            ],
+            "description": "The core threat vector category mapped according to the Stream 5 STRIDE Model."
+          },
+          "owasp_alignment": {
+            "type": "string",
+            "enum": [
+              "LA-01",
+              "LA-02",
+              "LA-03",
+              "LA-04",
+              "LA-05",
+              "LA-06",
+              "LA-07",
+              "LA-08",
+              "LA-09",
+              "LA-10"
+            ],
+            "description": "The specific custom category from the LifeAtlas Custom OWASP Top 10 Pass/Fail Criteria."
+          },
+          "affected_component": {
+            "type": "string",
+            "description": "The name of the outdated software module, manifest library, or specific relative source code file path."
+          },
+          "current_version": {
+            "type": "string",
+            "description": "The active installed deployment version of the package (omit if scanning static files/directories)."
+          },
+          "description": {
+            "type": "string",
+            "description": "A clear, concise engineering summary of the vulnerability footprint and potential compromise vectors."
+          },
+          "remediation": {
+            "type": "object",
+            "required": [
+              "steps"
+            ],
+            "properties": {
+              "fixed_version": {
+                "type": "string",
+                "description": "The target secure dependency version threshold. Must be omitted for non-dependency architectural or logic findings."
+              },
+              "steps": {
+                "type": "string",
+                "description": "Explicit instructions, terminal commands, or design patterns needed to completely execute the fix."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

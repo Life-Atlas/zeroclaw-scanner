@@ -44,11 +44,10 @@ def validate_path(path: Path, base_dir: Path) -> Path:
 
 def scan_secrets(target_dir: Path) -> list[Finding]:
     """Scan directory for hardcoded secrets. Returns list of findings."""
-    # Resolve and validate target_dir path limits (SEC-PATH-TRAVERSAL)
-    try:
-        target_abs = validate_path(target_dir, Path.cwd())
-    except ValueError as e:
-        raise ValueError(str(e))
+    # Resolve target_dir and rely on per-file boundary checks inside the loop
+    target_abs = target_dir.resolve()
+    # Validate the target directory against workspace bounds
+    validate_path(target_abs, Path.cwd())
 
     findings: list[Finding] = []
 

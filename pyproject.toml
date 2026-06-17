@@ -24,7 +24,7 @@ dev = [
 ]
 
 [project.scripts]
-zeroclaw = "zeroclaw.cli:main"
+zeroclaw-scanner = "zeroclaw.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
