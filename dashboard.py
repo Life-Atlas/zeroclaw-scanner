@@ -13,6 +13,15 @@ from datetime import datetime
 import streamlit as st
 import pandas as pd
 
+# Sync Streamlit secrets to environment variables to ensure subprocesses can access them.
+try:
+    for key in st.secrets:
+        val = st.secrets[key]
+        if isinstance(val, str) and val:
+            os.environ[key] = val
+except Exception:
+    pass
+
 # Auto-compile/install ZeroClaw agent binary on Streamlit Cloud if missing
 try:
     import shutil
