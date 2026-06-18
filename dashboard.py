@@ -654,10 +654,17 @@ with tab1:
                         """, unsafe_allow_html=True)
                         
                         # AI Enrichment Details
-                        if f.get("reasoning_chain"):
+                        reasoning = f.get("reasoning_chain")
+                        is_error = False
+                        if reasoning:
+                            for indicator in ["non-zero exit", "not found", "timed out", "unavailable", "returned non-zero", "failed", "error"]:
+                                if indicator in reasoning.lower():
+                                    is_error = True
+                                    break
+                        if reasoning and not is_error:
                             st.markdown("---")
                             st.markdown("**🧠 ZeroClaw Agent Reasoning:**")
-                            st.info(f["reasoning_chain"])
+                            st.info(reasoning)
                             
                         if f.get("fixed_code"):
                             st.markdown("**🔧 ZeroClaw Suggested Fix:**")
