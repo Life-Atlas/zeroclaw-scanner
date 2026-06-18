@@ -57,7 +57,7 @@ try:
         default_config = f"""schema_version = 3
 
 [providers.models.openrouter.scanner]
-model = "google/gemma-4-31b-it:free"
+model = "google/gemma-2-9b-it:free"
 temperature = 0.2
 api_key = "{api_key}"
 max_tokens = 1024
@@ -441,9 +441,37 @@ def run_scan_backend(target_path_str: str, stream_name: str, enable_enrich: bool
         if enrichable:
             st.text(f"Enriching {len(enrichable)} findings with ZeroClaw Rust Agent...")
             client = ZeroClawClient()
+            import time
+            consecutive_failures = 0
             for i, finding in enumerate(enrichable, 1):
+                if consecutive_failures >= 2:
+                    finding.reasoning_chain = (
+                        "ZeroClaw agent skipped due to consecutive API/timeout errors."
+                    )
+                    continue
+                
+                # Sleep briefly to avoid tight rate-limiting
+                if i > 1:
+                    time.sleep(1.5)
+                
                 file_to_enrich = target / finding.file_path
-                client.enrich_finding(finding, file_to_enrich)
+                try:
+                    client.enrich_finding(finding, file_to_enrich)
+                    
+                    # Check if finding got an error
+                    reasoning = getattr(finding, "reasoning_chain", "") or ""
+                    is_error = False
+                    for indicator in ["non-zero exit", "not found", "timed out", "unavailable", "returned non-zero", "failed", "error"]:
+                        if indicator in reasoning.lower():
+                            is_error = True
+                            break
+                    if is_error:
+                        consecutive_failures += 1
+                    else:
+                        consecutive_failures = 0
+                except Exception as e:
+                    consecutive_failures += 1
+                    finding.reasoning_chain = f"ZeroClaw agent enrichment failed: {e}"
                 
     return findings, target
 
