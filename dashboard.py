@@ -17,15 +17,23 @@ import pandas as pd
 try:
     import shutil
     import subprocess
+    import os
     from pathlib import Path
     cargo_name = "zeroclaw.exe" if os.name == "nt" else "zeroclaw"
     cargo_path = Path.home() / ".cargo" / "bin" / cargo_name
-    if not cargo_path.exists() and shutil.which("cargo"):
-        print("Streamlit Cloud environment: Compiling ZeroClaw Rust agent binary...")
-        subprocess.run(["cargo", "install", "zeroclaw"], check=True, capture_output=True)
-        print("ZeroClaw Rust agent binary compiled successfully.")
+    print(f"[ZeroClaw Build] cargo_path={cargo_path}, exists={cargo_path.exists()}, cargo_in_path={shutil.which('cargo')}")
+    
+    if not cargo_path.exists():
+        print("[ZeroClaw Build] Rust binary missing. Compiling ZeroClaw Rust agent binary...")
+        env = os.environ.copy()
+        # Fallback to check common apt-get cargo install directories if PATH is restricted
+        if not shutil.which("cargo") and os.path.exists("/usr/bin/cargo"):
+            env["PATH"] = f"/usr/bin{os.path.pathsep}{env.get('PATH', '')}"
+            
+        subprocess.run(["cargo", "install", "zeroclaw"], check=True, capture_output=True, env=env)
+        print("[ZeroClaw Build] ZeroClaw Rust agent binary compiled successfully.")
 except Exception as e:
-    print(f"ZeroClaw agent compilation warning: {e}")
+    print(f"[ZeroClaw Build] ZeroClaw agent compilation warning: {e}")
 
 # Import verification logic from verify_fix
 from verify_fix import verify_finding, TRACKER_FILE, load_tracker, save_tracker
