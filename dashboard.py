@@ -13,6 +13,20 @@ from datetime import datetime
 import streamlit as st
 import pandas as pd
 
+# Auto-compile ZeroClaw agent binary on Streamlit Cloud if missing
+try:
+    import shutil
+    import subprocess
+    from pathlib import Path
+    cargo_name = "zeroclaw.exe" if os.name == "nt" else "zeroclaw"
+    cargo_path = Path.home() / ".cargo" / "bin" / cargo_name
+    if not cargo_path.exists() and shutil.which("cargo"):
+        print("Streamlit Cloud environment: Compiling ZeroClaw Rust agent binary...")
+        subprocess.run(["cargo", "install", "zeroclaw"], check=True, capture_output=True)
+        print("ZeroClaw Rust agent binary compiled successfully.")
+except Exception as e:
+    print(f"ZeroClaw agent compilation warning: {e}")
+
 # Import verification logic from verify_fix
 from verify_fix import verify_finding, TRACKER_FILE, load_tracker, save_tracker
 
