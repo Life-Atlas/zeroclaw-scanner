@@ -37,18 +37,29 @@ try:
     cargo_path = Path.home() / ".cargo" / "bin" / cargo_name
     print(f"[ZeroClaw Build] cargo_path={cargo_path}, exists={cargo_path.exists()}, cargo_in_path={shutil.which('cargo')}")
     
-    # 1. Ensure config directory and config.toml exist
+    # 1. Ensure config directory and config.toml exist with API key configured
     config_dir = Path.home() / ".zeroclaw"
     config_path = config_dir / "config.toml"
-    if not config_path.exists():
-        print("[ZeroClaw Build] Creating default ~/.zeroclaw/config.toml...")
+    
+    api_key = ""
+    try:
+        if "OPENROUTER_API_KEY" in st.secrets:
+            api_key = st.secrets["OPENROUTER_API_KEY"]
+    except Exception:
+        pass
+    if not api_key:
+        api_key = os.environ.get("OPENROUTER_API_KEY", "")
+        
+    # Overwrite/write config.toml if it's missing, or if we have an API key to update
+    if api_key or not config_path.exists():
+        print(f"[ZeroClaw Build] Writing/updating ~/.zeroclaw/config.toml (api_key length={len(api_key)})")
         config_dir.mkdir(parents=True, exist_ok=True)
-        default_config = """schema_version = 3
+        default_config = f"""schema_version = 3
 
 [providers.models.openrouter.scanner]
 model = "google/gemma-4-31b-it:free"
 temperature = 0.2
-api_key_env = "OPENROUTER_API_KEY"
+api_key = "{api_key}"
 max_tokens = 1024
 fallback_models = []
 native_tools = false
@@ -65,7 +76,7 @@ workspace_only = false
 block_high_risk_commands = false
 """
         config_path.write_text(default_config, encoding="utf-8")
-        print("[ZeroClaw Build] Created default configuration file.")
+        print("[ZeroClaw Build] Configuration file configured successfully.")
 
     # 2. Download or compile binary
     if not cargo_path.exists():
