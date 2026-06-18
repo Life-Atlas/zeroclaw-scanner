@@ -13,27 +13,104 @@ from datetime import datetime
 import streamlit as st
 import pandas as pd
 
-# Auto-compile ZeroClaw agent binary on Streamlit Cloud if missing
+# Auto-compile/install ZeroClaw agent binary on Streamlit Cloud if missing
 try:
     import shutil
     import subprocess
     import os
+    import urllib.request
+    import tarfile
+    import zipfile
+    import platform
     from pathlib import Path
+    
     cargo_name = "zeroclaw.exe" if os.name == "nt" else "zeroclaw"
     cargo_path = Path.home() / ".cargo" / "bin" / cargo_name
     print(f"[ZeroClaw Build] cargo_path={cargo_path}, exists={cargo_path.exists()}, cargo_in_path={shutil.which('cargo')}")
     
+    # 1. Ensure config directory and config.toml exist
+    config_dir = Path.home() / ".zeroclaw"
+    config_path = config_dir / "config.toml"
+    if not config_path.exists():
+        print("[ZeroClaw Build] Creating default ~/.zeroclaw/config.toml...")
+        config_dir.mkdir(parents=True, exist_ok=True)
+        default_config = """schema_version = 3
+
+[providers.models.openrouter.scanner]
+model = "google/gemma-4-31b-it:free"
+temperature = 0.2
+api_key_env = "OPENROUTER_API_KEY"
+max_tokens = 1024
+fallback_models = []
+native_tools = false
+
+[agents.scanner]
+model_provider = "openrouter.scanner"
+risk_profile = "default"
+skill_bundles = []
+enabled = true
+
+[risk_profiles.default]
+level = "full"
+workspace_only = false
+block_high_risk_commands = false
+"""
+        config_path.write_text(default_config, encoding="utf-8")
+        print("[ZeroClaw Build] Created default configuration file.")
+
+    # 2. Download or compile binary
     if not cargo_path.exists():
-        print("[ZeroClaw Build] Rust binary missing. Compiling ZeroClaw Rust agent binary...")
-        env = os.environ.copy()
-        # Fallback to check common apt-get cargo install directories if PATH is restricted
-        if not shutil.which("cargo") and os.path.exists("/usr/bin/cargo"):
-            env["PATH"] = f"/usr/bin{os.path.pathsep}{env.get('PATH', '')}"
+        print("[ZeroClaw Build] Rust binary missing. Attempting to download pre-built binary...")
+        try:
+            system = platform.system().lower()
+            machine = platform.machine().lower()
+            url = None
+            is_zip = False
+            version = "v0.8.0"
             
-        subprocess.run(["cargo", "install", "zeroclaw"], check=True, capture_output=True, env=env)
-        print("[ZeroClaw Build] ZeroClaw Rust agent binary compiled successfully.")
+            if system == "linux" and ("x86_64" in machine or "amd64" in machine):
+                url = f"https://github.com/zeroclaw-labs/zeroclaw/releases/download/{version}/zeroclaw-x86_64-unknown-linux-gnu.tar.gz"
+                is_zip = False
+            elif system == "windows" and ("64" in machine or "amd64" in machine):
+                url = f"https://github.com/zeroclaw-labs/zeroclaw/releases/download/{version}/zeroclaw-x86_64-pc-windows-msvc.zip"
+                is_zip = True
+                
+            if url:
+                print(f"[ZeroClaw Build] Downloading pre-built ZeroClaw from {url}...")
+                cargo_path.parent.mkdir(parents=True, exist_ok=True)
+                temp_file, _ = urllib.request.urlretrieve(url)
+                print(f"[ZeroClaw Build] Downloaded to temp file: {temp_file}")
+                
+                if is_zip:
+                    with zipfile.ZipFile(temp_file, 'r') as zip_ref:
+                        for member in zip_ref.namelist():
+                            if member.endswith("zeroclaw.exe"):
+                                with zip_ref.open(member) as source, open(cargo_path, 'wb') as target:
+                                    target.write(source.read())
+                else:
+                    with tarfile.open(temp_file, 'r:gz') as tar_ref:
+                        for member in tar_ref.getmembers():
+                            if member.name == "zeroclaw" or member.name.endswith("/zeroclaw"):
+                                source = tar_ref.extractfile(member)
+                                if source:
+                                    with open(cargo_path, 'wb') as target:
+                                        target.write(source.read())
+                                        
+                if os.name != "nt":
+                    os.chmod(cargo_path, 0o755)
+                print(f"[ZeroClaw Build] Successfully installed pre-built binary to {cargo_path}")
+            else:
+                raise ValueError(f"No pre-built binary download URL mapped for system={system}, machine={machine}")
+        except Exception as download_err:
+            print(f"[ZeroClaw Build] Pre-built binary download failed: {download_err}. Falling back to cargo compile...")
+            env = os.environ.copy()
+            if not shutil.which("cargo") and os.path.exists("/usr/bin/cargo"):
+                env["PATH"] = f"/usr/bin{os.path.pathsep}{env.get('PATH', '')}"
+            subprocess.run(["cargo", "install", "zeroclaw"], check=True, capture_output=True, env=env)
+            print("[ZeroClaw Build] ZeroClaw Rust agent binary compiled successfully.")
 except Exception as e:
-    print(f"[ZeroClaw Build] ZeroClaw agent compilation warning: {e}")
+    print(f"[ZeroClaw Build] ZeroClaw agent install warning: {e}")
+
 
 # Import verification logic from verify_fix
 from verify_fix import verify_finding, TRACKER_FILE, load_tracker, save_tracker
