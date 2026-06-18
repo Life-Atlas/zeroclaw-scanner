@@ -53,15 +53,27 @@ def _find_zeroclaw_binary() -> str | None:
     # 2. Standard PATH lookup
     which_result = shutil.which("zeroclaw")
     if which_result:
-        return which_result
+        # Verify that the found command is actually the Rust agent and not the Python CLI script wrapper.
+        # The Python CLI script only supports {scan, report} and lacks the 'agent' subcommand.
+        try:
+            res = subprocess.run([which_result, "-h"], capture_output=True, text=True, timeout=2)
+            # The Rust agent binary help output will mention the 'agent' command.
+            if "agent" in res.stdout or "agent" in res.stderr:
+                return which_result
+            else:
+                logger.warning("Found 'zeroclaw' on PATH, but it lacks 'agent' subcommand support (likely the Python scanner CLI). Skipping.")
+        except Exception as e:
+            logger.warning("Could not execute 'zeroclaw' found on PATH for verification: %s", e)
 
     # 3. Cargo install default
-    cargo_path = Path.home() / ".cargo" / "bin" / "zeroclaw"
+    cargo_name = "zeroclaw.exe" if os.name == "nt" else "zeroclaw"
+    cargo_path = Path.home() / ".cargo" / "bin" / cargo_name
     if cargo_path.is_file() and os.access(cargo_path, os.X_OK):
         return str(cargo_path)
 
     # 4. Install script default
-    local_path = Path.home() / ".local" / "share" / "zeroclaw" / "zeroclaw"
+    local_name = "zeroclaw.exe" if os.name == "nt" else "zeroclaw"
+    local_path = Path.home() / ".local" / "share" / "zeroclaw" / local_name
     if local_path.is_file() and os.access(local_path, os.X_OK):
         return str(local_path)
 
