@@ -155,6 +155,79 @@ html,body,[class*="css"]{font-family:'Inter',sans-serif;}
 [data-testid="stSidebar"]{background:#0e1322!important;border-right:1px solid #1e293b;}
 header[data-testid="stHeader"]{display:none;}
 
+/* Highlighting widgets & bright labels */
+div[data-testid="stWidgetLabel"] p {
+    color: #e2e8f0 !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+}
+
+/* Force dark theme for selectboxes and multiselects */
+div[data-baseweb="select"] > div {
+    background-color: #161d30 !important;
+    color: #F1F5F9 !important;
+    border: 1px solid #24304a !important;
+}
+
+/* Force dark theme for text input fields */
+input[type="text"], div[data-testid="stTextInput"] input {
+    background-color: #161d30 !important;
+    color: #F1F5F9 !important;
+    border: 1px solid #24304a !important;
+}
+
+/* Style selected tag options inside multiselect to be dark and readable */
+span[data-baseweb="tag"] {
+    background-color: #1e293b !important;
+    color: #F1F5F9 !important;
+    border: 1px solid #38bdf8 !important;
+    border-radius: 4px !important;
+}
+
+/* Style selectbox dropdown option lists */
+div[role="listbox"] {
+    background-color: #161d30 !important;
+    color: #F1F5F9 !important;
+    border: 1px solid #24304a !important;
+}
+div[role="option"] {
+    background-color: #161d30 !important;
+    color: #F1F5F9 !important;
+}
+div[role="option"]:hover {
+    background-color: #1e293b !important;
+}
+
+/* Style all standard secondary buttons (e.g. Reload Tracker DB, etc) */
+button[data-testid="baseButton-secondary"] {
+    background-color: #161d30 !important;
+    color: #F1F5F9 !important;
+    border: 1px solid #24304a !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease-in-out !important;
+}
+button[data-testid="baseButton-secondary"]:hover {
+    background-color: #1e293b !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.2) !important;
+}
+
+/* Style primary buttons (e.g. Run Security Scan) */
+button[data-testid="baseButton-primary"] {
+    background-color: #38bdf8 !important;
+    color: #0b0f19 !important;
+    border: 1px solid #38bdf8 !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease-in-out !important;
+}
+button[data-testid="baseButton-primary"]:hover {
+    background-color: #0ea5e9 !important;
+    border-color: #0ea5e9 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.4) !important;
+}
+
 /* Clean Static Metrics */
 .metric-card{
     background:#161d30;
@@ -195,6 +268,87 @@ div[data-testid="stTabBar"] button {
 div[data-testid="stTabBar"] button[aria-selected="true"] {
     color: #38BDF8 !important;
     border-bottom: 2px solid #38BDF8 !important;
+}
+
+/* Animated Intro Banner */
+@keyframes slideDownFade {
+    0% {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.intro-banner {
+    animation: slideDownFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    background: linear-gradient(135deg, #0e1322 0%, #161d30 100%);
+    border: 1px solid #24304a;
+    border-left: 4px solid #38bdf8;
+    border-radius: 8px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+.intro-logo {
+    font-size: 28px;
+    font-weight: 700;
+    color: #F8FAFC;
+    font-family: 'Inter', sans-serif;
+}
+.intro-tagline {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #38bdf8;
+    margin-top: 6px;
+}
+.intro-desc {
+    font-size: 13.5px;
+    color: #94A3B8;
+    line-height: 1.6;
+    margin-top: 12px;
+}
+
+/* Animated Scanner Container */
+.scanner-container {
+    background: #0e1322 !important;
+    border: 1px solid #24304a !important;
+    border-radius: 8px !important;
+    padding: 32px 24px !important;
+    text-align: center !important;
+    position: relative !important;
+    overflow: hidden !important;
+    margin: 20px 0 !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+}
+.scan-bar {
+    height: 3px !important;
+    background: linear-gradient(90deg, transparent, #38bdf8, transparent) !important;
+    width: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    animation: scanInfinite 2.5s infinite linear !important;
+}
+.radar-ping {
+    width: 48px !important;
+    height: 48px !important;
+    border: 2px solid #38bdf8 !important;
+    border-radius: 50% !important;
+    margin: 0 auto !important;
+    animation: radarPulse 1.8s infinite ease-out !important;
+    opacity: 0;
+}
+@keyframes scanInfinite {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+@keyframes radarPulse {
+    0% { transform: scale(0.6); opacity: 1; }
+    100% { transform: scale(1.4); opacity: 0; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -521,11 +675,12 @@ with st.sidebar:
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style="padding:32px 0 8px 0;">
-    <div style="font-size:32px;font-weight:700;color:#F8FAFC;letter-spacing:-0.5px;font-family:'Inter',sans-serif;display:flex;align-items:center;">
-        <span style="margin-right:12px;">🔐</span> ZeroClaw Security Dashboard
+<div class="intro-banner">
+    <div class="intro-logo">🔐 ZeroClaw Security Dashboard</div>
+    <div class="intro-tagline">Continuous Threat Detection & Autonomous AI Remediation</div>
+    <div class="intro-desc">
+        ZeroClaw scans codebases in real-time, detecting dependency issues, hardcoded credentials, unprotected API routes, and injection flaws. Identified vulnerabilities are automatically enriched with reasoning chains and verified patches generated by the ZeroClaw Rust Agent.
     </div>
-    <div style="font-size:14px;color:#94A3B8;margin-top:4px;font-family:'Inter',sans-serif;">Run active vulnerability scans and review security guides across your repositories.</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -541,8 +696,23 @@ with st.container():
     run_scan_clicked = st.button("🚀 Run Security Scan", use_container_width=True)
     
     if run_scan_clicked:
+        scan_placeholder = st.empty()
         try:
-            with st.spinner("⏳ Executing ZeroClaw security scan pipeline in the backend..."):
+            scan_placeholder.markdown("""
+            <div class="scanner-container">
+                <div class="scan-bar"></div>
+                <div class="radar-ping"></div>
+                <div style="font-size: 16px; font-weight: 700; color: #38bdf8; margin-top: 16px;">
+                    📡 ZeroClaw Engine Scanning Repository...
+                </div>
+                <div style="font-size: 13px; color: #94a3b8; margin-top: 6px; line-height: 1.4;">
+                    Running dependency scans, credential search, and code pattern analysis.<br>
+                    Sending findings to the compiled Rust Agent for AI enrichment.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            with st.spinner("Executing ZeroClaw security scan pipeline in the backend..."):
                 # Automatically detect the correct stream/team label based on target path
                 inferred_stream = infer_stream_name(target_input)
                 
@@ -600,6 +770,7 @@ with st.container():
                     except Exception:
                         pass
 
+                scan_placeholder.empty()
                 st.success(f"🎉 Scan completed! Assigned automatically to stream '{inferred_stream}'. Found {len(scanned_findings)} findings.")
                 
                 # Reload UI state
@@ -608,6 +779,7 @@ with st.container():
                 st.rerun()
                 
         except Exception as e:
+            scan_placeholder.empty()
             st.error(f"Scan execution failed: {e}")
 
 st.markdown("<br>", unsafe_allow_html=True)
