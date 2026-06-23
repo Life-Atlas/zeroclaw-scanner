@@ -76,7 +76,7 @@ def _run_scan(args: argparse.Namespace) -> None:
     raw_findings.extend(deps)
 
     print("  ├─ Secret scanner ...", end=" ", flush=True)
-    secrets = scan_secrets(target)
+    secrets = scan_secrets(target, allowed_base=target)
     print(f"{len(secrets)} finding(s)")
     raw_findings.extend(secrets)
 

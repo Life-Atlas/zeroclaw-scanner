@@ -60,14 +60,14 @@ The agent requires a configuration file at `~/.zeroclaw/config.toml` to define i
 2. Create or edit `~/.zeroclaw/config.toml` with the following configuration. 
 
 > [!IMPORTANT]
-> **Free Tier Consideration:** If you are using OpenRouter's free tier, many free models reject API payloads that include "tools" or function-calling arrays. The model `google/gemma-4-31b-it:free` is specifically configured below because it correctly handles these payloads without returning a 404 error.
+> **Free Tier Consideration:** If you are using OpenRouter's free tier, many free models reject API payloads that include "tools" or function-calling arrays. The model `google/gemma-2-9b-it:free` is specifically configured below because it correctly handles these payloads without returning a 404 error.
 
 ```toml
 schema_version = 3
 
 [providers.models.openrouter.scanner]
 # Recommended free model that supports the ZeroClaw tool payload
-model = "google/gemma-4-31b-it:free"
+model = "google/gemma-2-9b-it:free"
 temperature = 0.2
 api_key_env = "OPENROUTER_API_KEY"
 max_tokens = 1024

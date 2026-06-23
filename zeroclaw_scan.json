@@ -1,306 +1,210 @@
 {
   "scan_metadata": {
-    "timestamp": "2026-06-17T15:42:18.119610+00:00",
+    "timestamp": "2026-06-17T21:05:18.976962+00:00",
     "scanner_tool": "custom-regex",
     "execution_environment": "local-dev-env"
   },
   "target_scope": {
     "stream_id": 1,
-    "repository_name": "tests",
+    "repository_name": "lpi-platform",
     "commit_sha": "0000000000000000000000000000000000000000"
   },
   "summary": {
-    "total_findings": 24,
+    "total_findings": 16,
     "critical_count": 0,
-    "high_count": 24,
-    "medium_count": 0,
+    "high_count": 9,
+    "medium_count": 7,
     "low_count": 0
   },
   "findings": [
     {
-      "id": "PATTERN-0001",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
       "stride_classification": "Tampering",
       "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/test_agent_client.py",
-      "description": "Possible SQL injection (f-string in execute) at line 21: description='Possible SQL injection at line 3: cursor.execute(f\"SELECT...\")',",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'fastapi>=0.135.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
       "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
+        "steps": "Pin fastapi to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
       }
     },
     {
-      "id": "PATTERN-0002",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
       "stride_classification": "Tampering",
       "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/test_agent_client.py",
-      "description": "Possible SQL injection (f-string in execute) at line 22: file_path=\"database.py\",",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'uvicorn[standard]>=0.30.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
       "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
+        "steps": "Pin uvicorn to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
       }
     },
     {
-      "id": "PATTERN-0003",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
       "stride_classification": "Tampering",
       "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/test_agent_client.py",
-      "description": "Possible SQL injection (f-string in execute) at line 23: remediation=\"Use parameterized queries or safe DOM APIs.\",",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'pydantic>=2.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
       "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
+        "steps": "Pin pydantic to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
       }
     },
     {
-      "id": "PATTERN-0004",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
       "stride_classification": "Tampering",
       "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/test_agent_client.py",
-      "description": "Possible SQL injection (f-string in execute) at line 34: '    cursor.execute(f\"SELECT * FROM users WHERE id = {user_id}\")\\n'",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'pydantic-settings>=2.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
       "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
+        "steps": "Pin pydantic-settings to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
       }
     },
     {
-      "id": "PATTERN-0005",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
       "stride_classification": "Tampering",
       "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/test_agent_client.py",
-      "description": "Possible SQL injection (f-string in execute) at line 35: '    return cursor.fetchone()\\n',",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'supabase>=2.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
       "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
+        "steps": "Pin supabase to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
       }
     },
     {
-      "id": "PATTERN-0006",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
       "stride_classification": "Tampering",
       "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/test_agent_client.py",
-      "description": "Possible SQL injection (f-string in execute) at line 36: encoding=\"utf-8\",",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'httpx>=0.27.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
       "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
+        "steps": "Pin httpx to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
       }
     },
     {
-      "id": "PATTERN-0007",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
       "stride_classification": "Tampering",
       "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/conftest.py",
-      "description": "Possible SQL injection (f-string in execute) at line 20: cursor.execute(f\"SELECT * FROM users WHERE id = {user_id}\")",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'python-dotenv>=1.0.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
       "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
-      }
-    },
-    {
-      "id": "PATTERN-0008",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Tampering",
-      "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/conftest.py",
-      "description": "Possible SQL injection (f-string in execute) at line 21: return cursor.fetchone()",
-      "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
-      }
-    },
-    {
-      "id": "PATTERN-0009",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Tampering",
-      "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/conftest.py",
-      "description": "Possible SQL injection (f-string in execute) at line 22: ",
-      "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
-      }
-    },
-    {
-      "id": "PATTERN-0010",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Tampering",
-      "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/conftest.py",
-      "description": "XSS risk: innerHTML assignment at line 32: document.getElementById(\"name\").innerHTML = user.name;",
-      "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
-      }
-    },
-    {
-      "id": "PATTERN-0011",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Tampering",
-      "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/conftest.py",
-      "description": "XSS risk: innerHTML assignment at line 33: document.getElementById(\"safe\").textContent = user.name;",
-      "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
-      }
-    },
-    {
-      "id": "PATTERN-0012",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Tampering",
-      "owasp_alignment": "LA-01",
-      "affected_component": "/home/naman/Internship/GitClone/zeroclaw-scanner/tests/conftest.py",
-      "description": "XSS risk: innerHTML assignment at line 34: }",
-      "remediation": {
-        "steps": "Use parameterized queries or safe DOM APIs."
-      }
-    },
-    {
-      "id": "SEC-KEY-001",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Information Disclosure",
-      "owasp_alignment": "LA-01",
-      "affected_component": "test_secret_scanner.py",
-      "description": "A hardcoded api key was detected in the source code.",
-      "remediation": {
-        "steps": "Remove the hardcoded secret and replace it with environment variable injection or a secret vault lookup."
-      }
-    },
-    {
-      "id": "SEC-KEY-002",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Information Disclosure",
-      "owasp_alignment": "LA-01",
-      "affected_component": "test_secret_scanner.py",
-      "description": "A hardcoded password/secret was detected in the source code.",
-      "remediation": {
-        "steps": "Remove the hardcoded secret and replace it with environment variable injection or a secret vault lookup."
-      }
-    },
-    {
-      "id": "SEC-KEY-003",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Information Disclosure",
-      "owasp_alignment": "LA-01",
-      "affected_component": "test_secret_scanner.py",
-      "description": "A hardcoded password/secret was detected in the source code.",
-      "remediation": {
-        "steps": "Remove the hardcoded secret and replace it with environment variable injection or a secret vault lookup."
-      }
-    },
-    {
-      "id": "SEC-KEY-004",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Information Disclosure",
-      "owasp_alignment": "LA-01",
-      "affected_component": "test_secret_scanner.py",
-      "description": "A hardcoded anthropic api key was detected in the source code.",
-      "remediation": {
-        "steps": "Remove the hardcoded secret and replace it with environment variable injection or a secret vault lookup."
-      }
-    },
-    {
-      "id": "SEC-KEY-005",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Information Disclosure",
-      "owasp_alignment": "LA-01",
-      "affected_component": "conftest.py",
-      "description": "A hardcoded api key was detected in the source code.",
-      "remediation": {
-        "steps": "Remove the hardcoded secret and replace it with environment variable injection or a secret vault lookup."
-      }
-    },
-    {
-      "id": "SEC-KEY-006",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-      "severity": "HIGH",
-      "stride_classification": "Information Disclosure",
-      "owasp_alignment": "LA-01",
-      "affected_component": "conftest.py",
-      "description": "A hardcoded password/secret was detected in the source code.",
-      "remediation": {
-        "steps": "Remove the hardcoded secret and replace it with environment variable injection or a secret vault lookup."
+        "steps": "Pin python-dotenv to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
       }
     },
     {
       "id": "AUTH-0001",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
       "severity": "HIGH",
       "stride_classification": "Elevation of Privilege",
       "owasp_alignment": "LA-01",
-      "affected_component": "test_agent_client.py",
-      "description": "FastAPI endpoint 'test_successful_enrichment' at line 68 does not enforce authentication/authorization checks.",
+      "affected_component": "src/lpi/main.py",
+      "description": "FastAPI endpoint 'health' at line 16 does not enforce authentication/authorization checks.",
       "remediation": {
         "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
       }
     },
     {
       "id": "AUTH-0002",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
       "severity": "HIGH",
       "stride_classification": "Elevation of Privilege",
       "owasp_alignment": "LA-01",
-      "affected_component": "test_agent_client.py",
-      "description": "FastAPI endpoint 'test_successful_enrichment_markdown_fenced' at line 86 does not enforce authentication/authorization checks.",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'create_goal' at line 32 does not enforce authentication/authorization checks.",
       "remediation": {
         "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
       }
     },
     {
       "id": "AUTH-0003",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
       "severity": "HIGH",
       "stride_classification": "Elevation of Privilege",
       "owasp_alignment": "LA-01",
-      "affected_component": "test_agent_client.py",
-      "description": "FastAPI endpoint 'test_agent_timeout_fallback' at line 115 does not enforce authentication/authorization checks.",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'list_goals' at line 59 does not enforce authentication/authorization checks.",
       "remediation": {
         "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
       }
     },
     {
       "id": "AUTH-0004",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
       "severity": "HIGH",
       "stride_classification": "Elevation of Privilege",
       "owasp_alignment": "LA-01",
-      "affected_component": "test_agent_client.py",
-      "description": "FastAPI endpoint 'test_agent_error_fallback' at line 126 does not enforce authentication/authorization checks.",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'get_goal' at line 82 does not enforce authentication/authorization checks.",
       "remediation": {
         "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
       }
     },
     {
       "id": "AUTH-0005",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
       "severity": "HIGH",
       "stride_classification": "Elevation of Privilege",
       "owasp_alignment": "LA-01",
-      "affected_component": "test_agent_client.py",
-      "description": "FastAPI endpoint 'test_non_json_uses_raw_output' at line 139 does not enforce authentication/authorization checks.",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'update_goal' at line 99 does not enforce authentication/authorization checks.",
       "remediation": {
         "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
       }
     },
     {
       "id": "AUTH-0006",
-      "reasoning_chain": "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
       "severity": "HIGH",
       "stride_classification": "Elevation of Privilege",
       "owasp_alignment": "LA-01",
-      "affected_component": "test_agent_client.py",
-      "description": "FastAPI endpoint 'test_correct_cli_args' at line 182 does not enforce authentication/authorization checks.",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'delete_goal' at line 160 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0007",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/recommendations.py",
+      "description": "FastAPI endpoint 'get_recommendations' at line 8 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0008",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/signals.py",
+      "description": "FastAPI endpoint 'ingest_signal' at line 8 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0009",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/signals.py",
+      "description": "FastAPI endpoint 'list_signals' at line 14 does not enforce authentication/authorization checks.",
       "remediation": {
         "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
       }
