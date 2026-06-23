@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .models import ScanResult
+from zeroclaw.models import ScanResult
 
 
 def main() -> None:
@@ -32,7 +33,7 @@ def main() -> None:
 
     report_cmd = subparsers.add_parser("report", help="Generate a report from a saved scan")
     report_cmd.add_argument("--format", choices=["terminal", "json"], default="terminal")
-    report_cmd.add_argument("--input", default="zeroclaw_scan.json", help="Input JSON scan file")
+    report_cmd.add_argument("--input", default="reports/latest_scan.json", help="Input JSON scan file")
 
     args = parser.parse_args()
 
@@ -49,17 +50,17 @@ def main() -> None:
 
 def _run_scan(args: argparse.Namespace) -> None:
     """Execute the 3-phase scan pipeline: Gather → Enrich → Report."""
-    from .scanners.pattern_scanner import scan_patterns
-    from .scanners.dependency_scanner import scan_dependencies
-    from .scanners.secret_scanner import scan_secrets
-    from .scanners.auth_scanner import scan_fastapi_auth, scan_supabase_rls
+    from zeroclaw.scanners.pattern_scanner import scan_patterns
+    from zeroclaw.scanners.dependency_scanner import scan_dependencies
+    from zeroclaw.scanners.secret_scanner import scan_secrets
+    from zeroclaw.scanners.auth_scanner import scan_fastapi_auth, scan_supabase_rls
 
     target = Path(args.target).resolve()
     if not target.exists():
         print(f"Error: target directory {target} does not exist")
         sys.exit(1)
 
-    stream = args.stream
+    stream = args.stream if args.stream else target.name
 
     # ── Phase 1: Gathering ──────────────────────────────────────────────
     print(f"[ZeroClaw] Phase 1/3 — Static analysis on {target}")
@@ -91,9 +92,8 @@ def _run_scan(args: argparse.Namespace) -> None:
     raw_findings.extend(rls)
 
     # Tag findings with stream label
-    if stream:
-        for f in raw_findings:
-            f.stream = stream
+    for f in raw_findings:
+        f.stream = stream
 
     print(f"\n[ZeroClaw] Total raw findings: {len(raw_findings)}")
 
@@ -113,7 +113,7 @@ def _run_scan(args: argparse.Namespace) -> None:
         )
 
         if enrichable:
-            from .agent_client import ZeroClawClient
+            from zeroclaw.agent_client import ZeroClawClient
 
             client = ZeroClawClient()
 
@@ -151,26 +151,43 @@ def _run_scan(args: argparse.Namespace) -> None:
     # Build the ScanResult
     stats = {}
     for f in enriched_findings:
-        sev = f.severity.value
-        stats[sev] = stats.get(sev, 0) + 1
+        if f.false_positive:
+            continue
+        stats[f.severity.value] = stats.get(f.severity.value, 0) + 1
+        stats[f.category.value] = stats.get(f.category.value, 0) + 1
 
     result = ScanResult(
         stream=stream,
-        repo_url=str(target),
+        repo_url=f"https://github.com/lifeatlas/{stream}",
         scanned_at=datetime.now(timezone.utc),
         findings=enriched_findings,
         stats=stats,
     )
 
-    from .reporter import generate_terminal_report, generate_json_report
+    from zeroclaw.reporter import generate_terminal_report, generate_json_report
+
+    # Ensure reports directory exists
+    reports_dir = Path("reports")
+    reports_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save to reports/latest_scan.json and reports/{stream}_scan.json
+    json_data = generate_json_report(result)
+    latest_file = reports_dir / "latest_scan.json"
+    stream_file = reports_dir / f"{stream}_scan.json"
+
+    # Datetime serializer for JSON
+    def dt_serializer(obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError("Type not serializable")
+
+    with open(latest_file, "w", encoding="utf-8") as fh:
+        json.dump(json_data, fh, indent=2, default=dt_serializer)
+    with open(stream_file, "w", encoding="utf-8") as fh:
+        json.dump(json_data, fh, indent=2, default=dt_serializer)
 
     if args.format == "json":
-        report = generate_json_report(result)
-        # Save to file
-        out_path = Path("zeroclaw_scan.json")
-        with open(out_path, "w", encoding="utf-8") as fh:
-            json.dump(report, fh, indent=2, default=str)
-        print(f"\n[ZeroClaw] JSON report saved to {out_path}")
+        print(json.dumps(json_data, indent=2, default=dt_serializer))
     else:
         output = generate_terminal_report(result)
         print(output)
@@ -185,12 +202,17 @@ def _run_report(args: argparse.Namespace) -> None:
         print(f"Error: input file {input_path} does not exist")
         sys.exit(1)
 
-    with open(input_path, encoding="utf-8") as fh:
-        data = json.load(fh)
+    try:
+        with open(input_path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        
+        # Parse back to ScanResult model (Pydantic resolves datetime strings)
+        result = ScanResult(**data)
+    except Exception as e:
+        print(f"Error reading or parsing scan results: {e}")
+        sys.exit(1)
 
-    result = ScanResult(**data)
-
-    from .reporter import generate_terminal_report, generate_json_report
+    from zeroclaw.reporter import generate_terminal_report, generate_json_report
 
     if args.format == "json":
         report = generate_json_report(result)

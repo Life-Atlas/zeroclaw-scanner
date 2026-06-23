@@ -28,3 +28,12 @@ repos:
       - id: detect-secrets
         args: [--baseline, .secrets.baseline]
         exclude: .env.example
+
+  - repo: local
+    hooks:
+      - id: zeroclaw-scan
+        name: ZeroClaw Security Scan
+        entry: python -m zeroclaw.cli scan --target . --stream local-commit
+        language: system
+        pass_filenames: false
+        always_run: true

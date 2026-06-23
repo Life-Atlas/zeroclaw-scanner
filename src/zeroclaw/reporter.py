@@ -1,229 +1,216 @@
 """Report generation: terminal, JSON, PDF."""
 from __future__ import annotations
+from datetime import datetime
+import json
+from collections import defaultdict
 
-from zeroclaw.models import ScanResult, StreamScore
-
-
-def generate_terminal_report(result: ScanResult) -> str:
-    """Rich terminal output of scan results with ZeroClaw enrichment data."""
-    lines: list[str] = []
-
-    # ── Header ──────────────────────────────────────────────────────────
-    lines.append("")
-    lines.append("=" * 72)
-    lines.append("  ZEROCLAW SECURITY SCAN REPORT")
-    lines.append("=" * 72)
-    lines.append("")
-    lines.append(f"  Repository:  {result.repo_url}")
-    if result.stream:
-        lines.append(f"  Stream:      {result.stream}")
-    lines.append(f"  Scanned at:  {result.scanned_at.isoformat()}")
-    lines.append("")
-
-    # ── Executive Summary ───────────────────────────────────────────────
-    total = len(result.findings)
-    lines.append("─" * 72)
-    lines.append("  EXECUTIVE SUMMARY")
-    lines.append("─" * 72)
-    lines.append("")
-
-    if total == 0:
-        lines.append("  ✅ No vulnerabilities detected.")
-        lines.append("")
-        lines.append("=" * 72)
-        return "\n".join(lines)
-
-    lines.append(f"  Total Findings: {total}")
-    lines.append("")
-
-    # Severity breakdown
-    severity_order = ["critical", "high", "medium", "low", "info"]
-    severity_icons = {
-        "critical": "🔴",
-        "high": "🟠",
-        "medium": "🟡",
-        "low": "🔵",
-        "info": "⚪",
-    }
-
-    for sev in severity_order:
-        count = result.stats.get(sev, 0)
-        if count > 0:
-            icon = severity_icons.get(sev, "  ")
-            lines.append(f"    {icon} {sev.upper():10s}  {count}")
-
-    lines.append("")
-
-    # Security posture
-    critical = result.stats.get("critical", 0)
-    high = result.stats.get("high", 0)
-    if critical > 0:
-        lines.append("  ⛔ Security Posture: CRITICAL — Immediate remediation required.")
-    elif high > 0:
-        lines.append("  ⚠️  Security Posture: AT RISK — High-severity issues must be addressed.")
-    else:
-        lines.append("  📋 Security Posture: MODERATE — Review findings before production.")
-
-    lines.append("")
-
-    # ── Detailed Findings ───────────────────────────────────────────────
-    lines.append("─" * 72)
-    lines.append("  DETAILED FINDINGS")
-    lines.append("─" * 72)
-
-    for i, finding in enumerate(result.findings, 1):
-        sev = finding.severity.value.upper()
-        icon = severity_icons.get(finding.severity.value, "  ")
-
-        lines.append("")
-        lines.append(f"  {icon} [{i}/{total}] {finding.id}")
-        lines.append(f"  {'─' * 60}")
-        lines.append(f"  Severity:    {sev}")
-        lines.append(f"  Category:    {finding.category.value}")
-        lines.append(f"  Title:       {finding.title}")
-        lines.append(f"  File:        {finding.file_path}")
-        if finding.line_number is not None:
-            lines.append(f"  Line:        {finding.line_number}")
-        lines.append("")
-        lines.append(f"  Description:")
-        for desc_line in finding.description.split("\n"):
-            lines.append(f"    {desc_line}")
-        lines.append("")
-        lines.append(f"  Remediation:")
-        for rem_line in finding.remediation.split("\n"):
-            lines.append(f"    {rem_line}")
-
-        # ── ZeroClaw Enrichment (if available) ──────────────────────────
-        if finding.reasoning_chain:
-            lines.append("")
-            lines.append(f"  🧠 ZeroClaw Reasoning:")
-            for chain_line in finding.reasoning_chain.split("\n"):
-                lines.append(f"    {chain_line}")
-
-        if finding.fixed_code:
-            lines.append("")
-            lines.append(f"  🔧 ZeroClaw Fixed Code:")
-            lines.append(f"    ┌{'─' * 56}┐")
-            for code_line in finding.fixed_code.split("\n"):
-                lines.append(f"    │ {code_line}")
-            lines.append(f"    └{'─' * 56}┘")
-
-        lines.append("")
-
-    # ── Footer ──────────────────────────────────────────────────────────
-    enriched_count = sum(1 for f in result.findings if f.reasoning_chain is not None)
-    lines.append("=" * 72)
-    lines.append(f"  {total} findings | {enriched_count} AI-enriched | powered by ZeroClaw")
-    lines.append("=" * 72)
-    lines.append("")
-
-    return "\n".join(lines)
-
-
-def generate_json_report(result: ScanResult) -> dict:
-    """JSON report formatted precisely to the LifeAtlasEcosystemSecurityFindingSchema."""
-    
-    findings_array = []
-    for f in result.findings:
-        # Default stride based on category
-        stride = "Tampering"
-        if f.category.value == "auth":
-            stride = "Elevation of Privilege"
-        elif f.category.value == "secret":
-            stride = "Information Disclosure"
-        elif f.category.value == "dependency":
-            stride = "Tampering"
-        elif f.category.value == "injection":
-            stride = "Tampering"
-            
-        steps = f.remediation
-        if f.fixed_code:
-            steps += f"\n\nFixed Code:\n```\n{f.fixed_code}\n```"
-            
-        findings_array.append({
-            "id": f.id,
-            "reasoning_chain": f.reasoning_chain or "Static analysis identified the vulnerability; AI enrichment skipped or unavailable.",
-            "severity": f.severity.value.upper(),
-            "stride_classification": stride,
-            "owasp_alignment": "LA-01",
-            "affected_component": f.file_path,
-            "description": f.description,
-            "remediation": {
-                "steps": steps
-            }
-        })
-        
-    stream_id = 1
-    try:
-        import re
-        if result.stream:
-            match = re.search(r'\d+', result.stream)
-            if match:
-                stream_id = int(match.group(0))
-    except Exception:
-        pass
-        
-    # Extract base name from repo_url or target path
-    import os
-    repo_name = os.path.basename(os.path.normpath(result.repo_url)) or "unknown-repo"
-
-    return {
-        "scan_metadata": {
-            "timestamp": result.scanned_at.isoformat(),
-            "scanner_tool": "custom-regex",
-            "execution_environment": "local-dev-env"
-        },
-        "target_scope": {
-            "stream_id": stream_id,
-            "repository_name": repo_name,
-            "commit_sha": "0000000000000000000000000000000000000000"
-        },
-        "summary": {
-            "total_findings": len(result.findings),
-            "critical_count": result.stats.get("critical", 0),
-            "high_count": result.stats.get("high", 0),
-            "medium_count": result.stats.get("medium", 0),
-            "low_count": result.stats.get("low", 0)
-        },
-        "findings": findings_array
-    }
+from zeroclaw.models import ScanResult, StreamScore, Finding, Severity, Category
 
 
 def calculate_stream_score(result: ScanResult) -> StreamScore:
-    """Calculate 0-10 security score for a stream."""
-    # Severity weights for scoring
-    weights = {
-        "critical": 10.0,
-        "high": 5.0,
-        "medium": 2.0,
-        "low": 0.5,
-        "info": 0.0,
+    """Calculate 0-10 security score for a stream.
+
+    Formula:
+    Base score is 10.0.
+    For each finding:
+      - Critical: -2.5
+      - High: -1.5
+      - Medium: -0.75
+      - Low: -0.25
+      - Info: -0.0
+    The score is bounded to [0.0, 10.0] and rounded to 1 decimal place.
+    """
+    severity_deductions = {
+        Severity.CRITICAL: 2.5,
+        Severity.HIGH: 1.5,
+        Severity.MEDIUM: 0.75,
+        Severity.LOW: 0.25,
+        Severity.INFO: 0.0,
     }
 
-    total_penalty = 0.0
-    findings_by_severity: dict[str, int] = {}
+    counts = {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "info": 0,
+    }
 
+    # Count findings by severity, ignoring false positives
     for finding in result.findings:
-        sev = finding.severity.value
-        findings_by_severity[sev] = findings_by_severity.get(sev, 0) + 1
-        total_penalty += weights.get(sev, 0)
+        if finding.false_positive:
+            continue
+        counts[finding.severity.value] = counts.get(finding.severity.value, 0) + 1
 
-    # Score: 10.0 (perfect) minus penalties, floored at 0.0
-    raw_score = max(0.0, 10.0 - total_penalty)
-    score = round(raw_score, 1)
+    # Calculate score
+    deductions = sum(counts[sev] * severity_deductions[Severity(sev)] for sev in counts)
+    score_val = max(0.0, 10.0 - deductions)
+    score_val = round(score_val, 1)
 
-    # Top issues: up to 5 highest-severity finding titles
-    sorted_findings = sorted(
-        result.findings,
-        key=lambda f: list(weights.keys()).index(f.severity.value)
-        if f.severity.value in weights
-        else 999,
-    )
-    top_issues = [f.title for f in sorted_findings[:5]]
+    # Prioritize and identify top issues
+    severity_order = {
+        Severity.CRITICAL: 0,
+        Severity.HIGH: 1,
+        Severity.MEDIUM: 2,
+        Severity.LOW: 3,
+        Severity.INFO: 4,
+    }
+
+    real_findings = [f for f in result.findings if not f.false_positive]
+    real_findings.sort(key=lambda f: (severity_order.get(f.severity, 99), f.title))
+
+    top_issues = []
+    seen_titles = set()
+    for f in real_findings:
+        if f.title not in seen_titles:
+            seen_titles.add(f.title)
+            top_issues.append(f"{f.severity.value.upper()}: {f.title}")
+            if len(top_issues) == 5:
+                break
 
     return StreamScore(
         stream=result.stream,
-        score=score,
-        findings_by_severity=findings_by_severity,
+        score=score_val,
+        findings_by_severity=counts,
         top_issues=top_issues,
     )
+
+
+def generate_json_report(result: ScanResult) -> dict:
+    """JSON report for dashboard consumption."""
+    scorecard = calculate_stream_score(result)
+    
+    # Calculate stats
+    stats = {}
+    for f in result.findings:
+        if f.false_positive:
+            continue
+        stats[f.category.value] = stats.get(f.category.value, 0) + 1
+        stats[f.severity.value] = stats.get(f.severity.value, 0) + 1
+    
+    result.stats = stats
+
+    if hasattr(result, "model_dump_json"):
+        serialized = json.loads(result.model_dump_json())
+    else:
+        serialized = json.loads(result.json())
+        
+    scorecard_dict = scorecard.model_dump() if hasattr(scorecard, "model_dump") else scorecard.dict()
+    serialized["scorecard"] = scorecard_dict
+    return serialized
+
+
+REMEDIATIONS_GUIDES = {
+    Category.SECRET: {
+        "guideline": "API keys, passwords, and sensitive tokens should never be hardcoded in source files or committed to Git. Instead, load them from environment variables or a secret manager.",
+        "bad": 'API_KEY = "sk-ant-api03-exampleKeyValHere1234567890"',
+        "good": 'import os\nAPI_KEY = os.environ.get("API_KEY")'
+    },
+    Category.DEPENDENCY: {
+        "guideline": "Vulnerable dependencies expose applications to known exploits. Floating/unpinned dependencies risk supply chain compromise. Pin versions and use cryptographic hashes.",
+        "bad": 'requests>=2.25.0',
+        "good": 'requests==2.31.0 --hash=sha256:7486c32d... # or use lockfiles'
+    },
+    Category.CODE_PATTERN: {
+        "guideline": "Avoid dynamic SQL query building and direct innerHTML assignments. Use parameterized queries or secure DOM APIs.",
+        "bad": 'cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")\n# Or in frontend:\nelement.innerHTML = user_input',
+        "good": 'cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))\n# Or in frontend:\nelement.textContent = user_input'
+    },
+    Category.AUTH: {
+        "guideline": "Endpoints that handle user data must enforce access control via authentication dependencies or Supabase row-level security (RLS) policies.",
+        "bad": '@app.get("/data")\ndef get_data(): ...',
+        "good": '@app.get("/data")\ndef get_data(user: User = Depends(get_current_user)): ...\n# SQL RLS:\nALTER TABLE profiles ENABLE ROW LEVEL SECURITY;'
+    }
+}
+
+
+def generate_terminal_report(result: ScanResult) -> str:
+    """Rich terminal output of scan results."""
+    scorecard = calculate_stream_score(result)
+    
+    # Calculate stats
+    stats = {
+        "critical": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "info": 0,
+    }
+    for f in result.findings:
+        if f.false_positive:
+            continue
+        stats[f.severity.value] = stats.get(f.severity.value, 0) + 1
+
+    lines = []
+    lines.append("=" * 80)
+    lines.append(f" ZEROCLAW SECURITY REPORT — {result.stream.upper()}")
+    lines.append(f" Scanned At: {result.scanned_at.strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append("=" * 80)
+    lines.append("")
+    
+    # Score details
+    lines.append(f" GLASS Security Score: {scorecard.score}/10.0")
+    lines.append(f" Findings by Severity: CRITICAL: {stats['critical']} | HIGH: {stats['high']} | MEDIUM: {stats['medium']} | LOW: {stats['low']} | INFO: {stats['info']}")
+    lines.append("")
+
+    if not result.findings:
+        lines.append(" ✅ No security findings detected! The repository is clean.")
+        lines.append("-" * 80)
+        return "\n".join(lines)
+
+    # Group findings by category
+    grouped: dict[Category, list[Finding]] = defaultdict(list)
+    for f in result.findings:
+        grouped[f.category].append(f)
+
+    # Print Findings grouped by Category
+    lines.append("DETAILED FINDINGS")
+    lines.append("-" * 80)
+
+    for cat in Category:
+        cat_findings = grouped.get(cat, [])
+        if not cat_findings:
+            continue
+        
+        lines.append(f"## {cat.value.upper()} SCANNER — {len(cat_findings)} findings")
+        lines.append("")
+        
+        for idx, f in enumerate(cat_findings, start=1):
+            fp_flag = " [FALSE POSITIVE]" if f.false_positive else ""
+            lines.append(f"  {idx}. [{f.severity.value.upper()}]{fp_flag} {f.title}")
+            lines.append(f"     File: {f.file_path}:{f.line_number or 'N/A'}")
+            lines.append(f"     ID: {f.id}")
+            lines.append(f"     Description: {f.description}")
+            lines.append(f"     Remediation: {f.remediation}")
+            
+            # Print ZeroClaw Reasoning and Fixed Code if present
+            if getattr(f, "reasoning_chain", None):
+                lines.append("")
+                lines.append("     🧠 ZeroClaw Reasoning:")
+                for chain_line in f.reasoning_chain.splitlines():
+                    lines.append(f"       {chain_line}")
+            if getattr(f, "fixed_code", None):
+                lines.append("")
+                lines.append("     🔧 ZeroClaw Fixed Code:")
+                lines.append("       ┌" + "─" * 56 + "┐")
+                for code_line in f.fixed_code.splitlines():
+                    lines.append(f"       │ {code_line}")
+                lines.append("       └" + "─" * 56 + "┘")
+            lines.append("")
+
+        # Add remediation guidance + code examples
+        guide = REMEDIATIONS_GUIDES.get(cat)
+        if guide:
+            lines.append("  Remediation Guidance:")
+            lines.append(f"     {guide['guideline']}")
+            lines.append("     [BAD EXAMPLES]")
+            for bad_line in guide["bad"].splitlines():
+                lines.append(f"     - {bad_line}")
+            lines.append("     [GOOD EXAMPLES]")
+            for good_line in guide["good"].splitlines():
+                lines.append(f"     + {good_line}")
+            lines.append("")
+        lines.append("-" * 80)
+
+    return "\n".join(lines)
+

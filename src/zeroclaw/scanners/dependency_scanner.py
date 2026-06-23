@@ -1,4 +1,4 @@
-"""Dependency vulnerability scanner: npm audit + pip-audit + CVE lookup."""
+import os
 import json
 import re
 import subprocess
