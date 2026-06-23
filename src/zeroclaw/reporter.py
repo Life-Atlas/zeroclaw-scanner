@@ -141,7 +141,7 @@ def generate_terminal_report(result: ScanResult) -> str:
             continue
         stats[f.severity.value] = stats.get(f.severity.value, 0) + 1
 
-    lines = []
+    lines: list[str] = []
     lines.append("=" * 80)
     lines.append(f" ZEROCLAW SECURITY REPORT — {result.stream.upper()}")
     lines.append(f" Scanned At: {result.scanned_at.strftime('%Y-%m-%d %H:%M:%S')}")
