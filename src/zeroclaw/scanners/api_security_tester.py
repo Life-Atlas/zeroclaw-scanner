@@ -267,7 +267,7 @@ class APISecurityTester:
                     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
                         # Set pre-existing session token/cookie
                         dummy_token = "pre_existing_session_id_123456"
-                        if cookie_name:
+                        if isinstance(cookie_name, str):
                             client.cookies[cookie_name] = dummy_token
                         
                         req_headers = {}
@@ -283,21 +283,22 @@ class APISecurityTester:
                             )
                             
                             # Verify fixation protection without ValueError on duplicates
-                            new_cookie_val = response.cookies.get(cookie_name)
-                            if not new_cookie_val:
-                                # Inspect client jar safely
-                                matching_vals = [c.value for c in client.cookies.jar if c.name == cookie_name]
-                                if len(matching_vals) == 1 and matching_vals[0] == dummy_token:
-                                    failures.append(
-                                        f"Session Fixation Vulnerability: Login at {login_path} did not set a new "
-                                        f"session cookie '{cookie_name}'. Value remained the pre-existing '{dummy_token}'."
-                                    )
-                            else:
-                                if new_cookie_val == dummy_token:
-                                    failures.append(
-                                        f"Session Fixation Vulnerability: Login at {login_path} set session cookie "
-                                        f"'{cookie_name}' but kept the pre-existing value '{dummy_token}'."
-                                    )
+                            if isinstance(cookie_name, str):
+                                new_cookie_val = response.cookies.get(cookie_name)
+                                if not new_cookie_val:
+                                    # Inspect client jar safely
+                                    matching_vals = [c.value for c in client.cookies.jar if c.name == cookie_name]
+                                    if len(matching_vals) == 1 and matching_vals[0] == dummy_token:
+                                        failures.append(
+                                            f"Session Fixation Vulnerability: Login at {login_path} did not set a new "
+                                            f"session cookie '{cookie_name}'. Value remained the pre-existing '{dummy_token}'."
+                                        )
+                                else:
+                                    if new_cookie_val == dummy_token:
+                                        failures.append(
+                                            f"Session Fixation Vulnerability: Login at {login_path} set session cookie "
+                                            f"'{cookie_name}' but kept the pre-existing value '{dummy_token}'."
+                                        )
                             
                             if header_name:
                                 new_header_val = response.headers.get(header_name)
