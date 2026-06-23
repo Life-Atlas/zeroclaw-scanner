@@ -1,0 +1,213 @@
+{
+  "scan_metadata": {
+    "timestamp": "2026-06-17T21:05:18.976962+00:00",
+    "scanner_tool": "custom-regex",
+    "execution_environment": "local-dev-env"
+  },
+  "target_scope": {
+    "stream_id": 1,
+    "repository_name": "lpi-platform",
+    "commit_sha": "0000000000000000000000000000000000000000"
+  },
+  "summary": {
+    "total_findings": 16,
+    "critical_count": 0,
+    "high_count": 9,
+    "medium_count": 7,
+    "low_count": 0
+  },
+  "findings": [
+    {
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
+      "stride_classification": "Tampering",
+      "owasp_alignment": "LA-01",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'fastapi>=0.135.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
+      "remediation": {
+        "steps": "Pin fastapi to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
+      }
+    },
+    {
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
+      "stride_classification": "Tampering",
+      "owasp_alignment": "LA-01",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'uvicorn[standard]>=0.30.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
+      "remediation": {
+        "steps": "Pin uvicorn to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
+      }
+    },
+    {
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
+      "stride_classification": "Tampering",
+      "owasp_alignment": "LA-01",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'pydantic>=2.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
+      "remediation": {
+        "steps": "Pin pydantic to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
+      }
+    },
+    {
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
+      "stride_classification": "Tampering",
+      "owasp_alignment": "LA-01",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'pydantic-settings>=2.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
+      "remediation": {
+        "steps": "Pin pydantic-settings to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
+      }
+    },
+    {
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
+      "stride_classification": "Tampering",
+      "owasp_alignment": "LA-01",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'supabase>=2.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
+      "remediation": {
+        "steps": "Pin supabase to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
+      }
+    },
+    {
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
+      "stride_classification": "Tampering",
+      "owasp_alignment": "LA-01",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'httpx>=0.27.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
+      "remediation": {
+        "steps": "Pin httpx to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
+      }
+    },
+    {
+      "id": "ZEROCLAW-DEP-002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "MEDIUM",
+      "stride_classification": "Tampering",
+      "owasp_alignment": "LA-01",
+      "affected_component": "/mnt/c/Users/mrvar/lpi-platform/pyproject.toml",
+      "description": "'python-dotenv>=1.0.0' uses a floating version specifier. Floating versions allow automatic updates that may pull in vulnerable or malicious releases without explicit review.",
+      "remediation": {
+        "steps": "Pin python-dotenv to an exact version using '==' and add a hash marker, e.g. via pip-compile --generate-hashes."
+      }
+    },
+    {
+      "id": "AUTH-0001",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/main.py",
+      "description": "FastAPI endpoint 'health' at line 16 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0002",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'create_goal' at line 32 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0003",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'list_goals' at line 59 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0004",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'get_goal' at line 82 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0005",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'update_goal' at line 99 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0006",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/goals.py",
+      "description": "FastAPI endpoint 'delete_goal' at line 160 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0007",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/recommendations.py",
+      "description": "FastAPI endpoint 'get_recommendations' at line 8 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0008",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/signals.py",
+      "description": "FastAPI endpoint 'ingest_signal' at line 8 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    },
+    {
+      "id": "AUTH-0009",
+      "reasoning_chain": "ZeroClaw agent binary not found. Install it: curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/master/install.sh | bash  Then ensure ~/.cargo/bin is in your PATH.",
+      "severity": "HIGH",
+      "stride_classification": "Elevation of Privilege",
+      "owasp_alignment": "LA-01",
+      "affected_component": "src/lpi/routers/signals.py",
+      "description": "FastAPI endpoint 'list_signals' at line 14 does not enforce authentication/authorization checks.",
+      "remediation": {
+        "steps": "Add Depends(get_current_user) or equivalent security dependency check to the route handler."
+      }
+    }
+  ]
+}
