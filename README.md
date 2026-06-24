@@ -56,8 +56,8 @@ graph TD
     AuthScan -->|Findings| Compiler
     APITest -->|Findings| Compiler
 
-    Compiler -->|ScanResult List| Model[Pydantic Models Validation]
-    Model -->|Structured Result| Scorecard[GLASS Scorecard Calculation]
+    Compiler -->|ScanResult List| ZeroclawAI[Zeroclaw AI Agent]
+    ZeroclawAI -->|Structured Result| Scorecard[GLASS Scorecard Calculation]
     
     subgraph Outputs [Reporting Planes]
         Scorecard -->|Score + Stats| JSONGen[JSON Report Generator]
