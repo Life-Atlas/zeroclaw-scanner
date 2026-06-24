@@ -88,51 +88,14 @@ graph TD
     PatternScan -->|Findings| Compiler
     DepScan -->|Findings| Compiler
     AuthScan -->|Findings| Compiler
-    APISec -->|Findings| Compiler
+    APITest -->|Findings| Compiler
 
-    subgraph Phase2["Phase 2: AI Enrichment"]
-        Compiler -->|"Critical/High/Medium"| AgentClient["Agent Client<br/><code>agent_client.py</code>"]
-        AgentClient -->|"CLI subprocess call"| RustBin["ZeroClaw Rust Agent<br/><code>~/.cargo/bin/zeroclaw</code>"]
-        RustBin -->|"API call"| LLM["OpenRouter LLM<br/><code>gemma-4-31b-it:free</code>"]
-        LLM -->|"reasoning_chain + fixed_code"| RustBin
-        RustBin -->|"JSON response"| AgentClient
-    end
-
-    subgraph Phase3["Phase 3: Reporting"]
-        AgentClient -->|Enriched Findings| Scorecard["GLASS Scorecard<br/>Score Calculation"]
-        Scorecard --> JSONReport["JSON Report<br/><code>reports/latest_scan.json</code>"]
-        Scorecard --> TermReport["Terminal Report<br/>Rich Formatted Output"]
-        Scorecard --> DashboardUI["Dashboard UI<br/>Tracker · Scorecard · Export"]
-    end
-
-    subgraph Persistence["💾 Persistence"]
-        DashboardUI -->|Read/Write| Tracker["findings_tracker.json"]
-        DashboardUI -->|Auto-Verify| VerifyScript["verify_fix.py"]
-        VerifyScript -->|Re-scan| Phase1
-    end
-```
-
-### Dashboard Architecture
-
-```mermaid
-graph LR
-    subgraph Frontend["Streamlit Frontend"]
-        Splash["🔐 Splash Screen"]
-        Sidebar["Sidebar Filters<br/>Stream · Severity · Status"]
-        ScanPanel["📡 Scan Control Center<br/>Path Input · Git URL · AI Toggle"]
-        Tabs["Tabbed Interface"]
-        T1["📋 Findings Tracker"]
-        T2["🏆 Scorecard"]
-        T3["📡 Scan Sources"]
-        T4["📥 Export"]
-        Tabs --> T1 & T2 & T3 & T4
-    end
-
-    subgraph Backend["Python Backend"]
-        Scanners["Scanner Suite"]
-        Agent["ZeroClaw Agent Client"]
-        Verify["verify_fix.py"]
-        TrackerDB["findings_tracker.json"]
+    Compiler -->|ScanResult List| ZeroclawAI[Zeroclaw AI Agent]
+    ZeroclawAI -->|Structured Result| Scorecard[GLASS Scorecard Calculation]
+    
+    subgraph Outputs [Reporting Planes]
+        Scorecard -->|Score + Stats| JSONGen[JSON Report Generator]
+        Scorecard -->|Score + Stats| TermGen[Terminal Report Generator]
     end
 
     ScanPanel -->|"Run Scan"| Scanners
