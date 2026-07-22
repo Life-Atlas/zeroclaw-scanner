@@ -1,4 +1,4 @@
-# ZeroClaw Scanner — Complete Setup & Usage Guide
+# North Star Scanner — Complete Setup & Usage Guide
 
 > **ZeroClaw** is an automated, AI-powered security auditing platform designed to detect, analyze, and remediate vulnerabilities across codebases within the LifeAtlas ecosystem. It combines static analysis, dynamic API testing, and LLM-driven remediation into a single unified pipeline — accessible via both a **CLI** and a **Streamlit Dashboard**.
 
